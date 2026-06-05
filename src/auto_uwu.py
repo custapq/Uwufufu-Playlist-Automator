@@ -1,3 +1,4 @@
+import getpass
 import re
 import time
 import random
@@ -31,13 +32,30 @@ ADD_BUTTON_CSS = "button.bg-uwu-red[type='submit']"
 
 
 def get_user_credentials():
-    """Get all necessary credentials and IDs from the user"""
+    """Collect all required inputs from the user.
+
+    Checks environment variables (via .env) first.
+    Falls back to interactive prompts for any missing values.
+    """
+    from src.config import load_credentials_from_env
+
+    env = load_credentials_from_env()
+
     print("\n=== Spotify Playlist ===")
-    spotify_url = input("Enter your Spotify playlist URL: ")
+    if env and env.spotify_url:
+        spotify_url = env.spotify_url
+        print(f"Loaded Spotify URL from .env: {spotify_url}")
+    else:
+        spotify_url = input("Enter your Spotify playlist URL: ")
 
     print("\n=== UwuFufu Credentials ===")
-    uwu_username = input("Enter your UwuFufu email: ")
-    uwu_password = input("Enter your UwuFufu password: ")
+    if env:
+        uwu_username = env.email
+        uwu_password = env.password
+        print(f"Loaded credentials from .env (email: {uwu_username})")
+    else:
+        uwu_username = input("Enter your UwuFufu email: ")
+        uwu_password = getpass.getpass("Enter your UwuFufu password: ")
 
     print("\n=== UwuFufu Game Details ===")
     game_title = input("Enter your game title: ")

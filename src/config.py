@@ -172,7 +172,7 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
 
 def load_env_credentials() -> tuple[Optional[str], Optional[str], Optional[str]]:
     """
-    Load credentials from a .env file or environment variables.
+    Load raw credential strings from a .env file or environment variables.
 
     Returns:
         A tuple of (email, password, spotify_url).
@@ -183,3 +183,31 @@ def load_env_credentials() -> tuple[Optional[str], Optional[str], Optional[str]]
     password = os.getenv("UWUFUFU_PASSWORD")
     spotify_url = os.getenv("SPOTIFY_PLAYLIST_URL")
     return email, password, spotify_url
+
+
+def load_credentials_from_env() -> Optional["UserInputFromEnv"]:
+    """
+    Load credentials from a .env file and return typed model objects.
+
+    Returns a named tuple-like structure when all required fields are present,
+    or None if email or password is missing from the environment.
+
+    This is the preferred function for callers that want model objects
+    rather than raw strings. get_user_credentials() uses this internally.
+
+    Returns:
+        A namespace with .email, .password, and optionally .spotify_url,
+        or None if required credentials are not set.
+    """
+    from types import SimpleNamespace
+
+    email, password, spotify_url = load_env_credentials()
+
+    if not email or not password:
+        return None
+
+    return SimpleNamespace(
+        email=email,
+        password=password,
+        spotify_url=spotify_url,  # may be None — caller can prompt if needed
+    )
