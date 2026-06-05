@@ -1,11 +1,3 @@
-"""
-tests/test_phase2_security.py — Verify Phase 2 security requirements.
-
-Covers:
-  2.4 — Without .env, load_credentials_from_env() returns None (interactive fallback needed)
-  2.5 — With .env values set, load_credentials_from_env() returns correct credentials
-"""
-
 import pytest
 from unittest.mock import patch
 from types import SimpleNamespace

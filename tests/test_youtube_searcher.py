@@ -1,5 +1,3 @@
-"""tests/test_youtube_searcher.py — Unit tests for YouTubeSearcher (mocked HTTP)."""
-
 from unittest.mock import MagicMock, patch
 
 from src.config import AppConfig

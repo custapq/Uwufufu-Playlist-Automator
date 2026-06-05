@@ -1,9 +1,3 @@
-"""
-uwufufu_automator.py — UwuFufu browser automation for Uwufufu-Automator
-
-Handles login, game creation, and adding YouTube videos to a UwuFufu game.
-"""
-
 from __future__ import annotations
 
 import logging

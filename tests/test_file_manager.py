@@ -1,5 +1,3 @@
-"""tests/test_file_manager.py — Unit tests for saving/loading YouTube links."""
-
 import json
 
 from src.file_manager import load_youtube_links, mark_video_added, save_youtube_links

@@ -1,5 +1,3 @@
-"""tests/test_retry.py — Unit tests for the retry decorator."""
-
 import pytest
 
 from src.utils.retry import retry

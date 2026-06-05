@@ -1,5 +1,3 @@
-"""tests/test_main.py — Unit tests for main.py argument resolution and helpers."""
-
 import argparse
 from types import SimpleNamespace
 from unittest.mock import patch

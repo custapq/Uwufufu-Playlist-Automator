@@ -1,9 +1,3 @@
-"""
-spotify_scraper.py — Spotify playlist scraper for Uwufufu-Automator
-
-Extracts tracks from a public Spotify playlist using Selenium (no API key required).
-"""
-
 from __future__ import annotations
 
 import logging

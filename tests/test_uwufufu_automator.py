@@ -1,5 +1,3 @@
-"""tests/test_uwufufu_automator.py — Unit tests for UwuFufuAutomator (mocked WebDriver)."""
-
 from unittest.mock import MagicMock, patch
 
 import pytest

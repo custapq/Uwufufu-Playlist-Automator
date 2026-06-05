@@ -1,5 +1,3 @@
-"""tests/test_spotify_scraper.py — Unit tests for SpotifyScraper (mocked WebDriver)."""
-
 from unittest.mock import MagicMock, patch
 
 import pytest

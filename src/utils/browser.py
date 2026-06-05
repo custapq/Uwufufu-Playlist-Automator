@@ -1,7 +1,3 @@
-"""
-browser.py — WebDriver factory and browser utilities for Uwufufu-Automator
-"""
-
 from __future__ import annotations
 
 import logging

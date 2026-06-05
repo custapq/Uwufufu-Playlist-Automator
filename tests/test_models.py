@@ -1,5 +1,3 @@
-"""tests/test_models.py — Unit tests for data models."""
-
 from src.models import Credentials, GameConfig, Track, UserInput, YoutubeLink
 
 

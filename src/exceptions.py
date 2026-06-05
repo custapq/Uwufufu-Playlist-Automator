@@ -1,13 +1,3 @@
-"""
-exceptions.py — Custom exceptions for Uwufufu-Automator
-
-Reasons for using custom exceptions instead of plain Exception:
-  - Catch errors precisely — clearer, more actionable error messages
-  - main() can handle each error type separately
-  - Easier to debug and log
-"""
-
-
 class UwufufuError(Exception):
     """
     Base exception for all errors raised by this program.

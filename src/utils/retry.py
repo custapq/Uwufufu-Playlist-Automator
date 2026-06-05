@@ -1,7 +1,3 @@
-"""
-retry.py — Retry decorator with exponential backoff for Uwufufu-Automator
-"""
-
 from __future__ import annotations
 
 import functools

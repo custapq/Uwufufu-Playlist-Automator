@@ -1,5 +1,3 @@
-"""tests/test_config.py — Unit tests for configuration loading."""
-
 from pathlib import Path
 
 from src.config import AppConfig, SelectorConfig, TimingConfig, load_config

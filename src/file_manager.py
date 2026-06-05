@@ -1,7 +1,3 @@
-"""
-file_manager.py — Save and load YouTube link results for Uwufufu-Automator
-"""
-
 from __future__ import annotations
 
 import json

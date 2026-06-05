@@ -1,10 +1,3 @@
-"""
-config.py — Configuration management for Uwufufu-Automator
-
-Consolidates all constants previously scattered across auto_uwu.py into one place.
-Supports overriding values via config.yaml (if present) or falls back to defaults.
-"""
-
 from __future__ import annotations
 
 import os

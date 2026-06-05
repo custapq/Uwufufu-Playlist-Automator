@@ -1,5 +1,3 @@
-"""tests/test_logger.py — Unit tests for logger setup."""
-
 import logging
 
 from src.utils.logger import setup_logger

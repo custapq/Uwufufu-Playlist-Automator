@@ -1,10 +1,3 @@
-"""
-youtube_searcher.py — YouTube video search for Uwufufu-Automator
-
-Searches YouTube for a video matching each Spotify track using HTTP scraping
-(no API key required).
-"""
-
 from __future__ import annotations
 
 import logging

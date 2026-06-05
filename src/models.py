@@ -1,12 +1,3 @@
-"""
-models.py — Data classes for Uwufufu-Automator
-
-Replaces plain dicts used in the original auto_uwu.py to provide:
-- Type safety  — IDE warns when accessing wrong fields
-- Readability  — each field's purpose is self-documenting
-- Testability  — model logic can be unit-tested in isolation
-"""
-
 from dataclasses import dataclass, field
 from typing import Optional
 

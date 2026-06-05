@@ -1,5 +1,3 @@
-"""tests/test_browser.py — Unit tests for browser utilities (mocked WebDriver)."""
-
 from unittest.mock import MagicMock, patch
 
 from selenium.common.exceptions import WebDriverException

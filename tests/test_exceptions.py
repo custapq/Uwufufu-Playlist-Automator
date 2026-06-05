@@ -1,5 +1,3 @@
-"""tests/test_exceptions.py — Tests for the custom exception hierarchy."""
-
 import pytest
 
 from src.exceptions import (

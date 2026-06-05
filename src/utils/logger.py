@@ -1,7 +1,3 @@
-"""
-logger.py — Logging configuration for Uwufufu-Automator
-"""
-
 from __future__ import annotations
 
 import logging

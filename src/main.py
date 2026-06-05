@@ -1,7 +1,3 @@
-"""
-main.py — Entry point for Uwufufu-Automator
-"""
-
 from __future__ import annotations
 
 import argparse
