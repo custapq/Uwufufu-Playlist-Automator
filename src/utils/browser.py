@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from typing import Generator, List, Optional, Tuple
 
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
@@ -50,7 +51,7 @@ def find_element_with_fallback(
                 if element.is_displayed():
                     logger.debug("Element found via: %s", description)
                     return element
-        except Exception:
+        except WebDriverException:
             continue
 
     logger.debug("Element not found after trying %d strategies", len(strategies))

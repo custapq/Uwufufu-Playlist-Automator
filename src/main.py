@@ -32,6 +32,20 @@ from src.youtube_searcher import YouTubeSearcher
 logger = logging.getLogger(__name__)
 
 
+def _report_error(message: str, exc: Exception) -> int:
+    """Log an actionable error message (console + file) plus a full traceback (file only).
+
+    The console handler runs at INFO level, so the DEBUG traceback is written
+    only to the log file — keeping the console clean while preserving detail.
+
+    Returns:
+        1, so callers can `return _report_error(...)`.
+    """
+    logger.error("❌ %s: %s", message, exc)
+    logger.debug("Full traceback for the error above:", exc_info=True)
+    return 1
+
+
 # ─────────────────────────────────────────────
 # CLI argument parser
 # ─────────────────────────────────────────────
@@ -254,23 +268,17 @@ def main(argv=None) -> int:
         return _step_uwufufu(youtube_links, credentials, game, config)
 
     except SpotifyError as exc:
-        logger.error("❌ Spotify error: %s", exc)
-        return 1
+        return _report_error("Spotify error", exc)
     except YouTubeError as exc:
-        logger.error("❌ YouTube error: %s", exc)
-        return 1
+        return _report_error("YouTube error", exc)
     except LoginError as exc:
-        logger.error("❌ Login failed: %s", exc)
-        return 1
+        return _report_error("Login failed", exc)
     except (NavigationError, GameCreationError) as exc:
-        logger.error("❌ Game creation failed: %s", exc)
-        return 1
+        return _report_error("Game creation failed", exc)
     except AutomationError as exc:
-        logger.error("❌ Automation error: %s", exc)
-        return 1
+        return _report_error("Automation error", exc)
     except UwufufuError as exc:
-        logger.error("❌ Unexpected error: %s", exc)
-        return 1
+        return _report_error("Unexpected error", exc)
 
 
 if __name__ == "__main__":
