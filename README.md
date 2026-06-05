@@ -138,10 +138,22 @@ Uwufufu-Automator/
 
 ## Running Tests
 
+Install the development dependencies first:
+
 ```bash
-pytest
-pytest --cov=src       # with coverage report
+pip install -r requirements-dev.txt
 ```
+
+Then run the suite:
+
+```bash
+pytest                              # run all tests
+pytest --cov=src                    # with coverage summary
+pytest --cov=src --cov-report=term-missing   # show uncovered lines
+```
+
+All tests use mocks — no real network access or browser is required.
+Current coverage is ~67% (the frozen `auto_uwu_legacy.py` is excluded via `.coveragerc`).
 
 ## Troubleshooting
 
