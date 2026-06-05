@@ -83,3 +83,27 @@ class TestManagedBrowser:
             except ValueError:
                 pass
         mock_driver.quit.assert_called_once()
+
+    def test_keep_open_on_error_pauses_then_quits(self):
+        mock_driver = MagicMock()
+        with patch.object(browser, "create_driver", return_value=mock_driver), \
+             patch("builtins.input", return_value="") as mock_input:
+            try:
+                with managed_browser(keep_open_on_error=True):
+                    raise ValueError("boom")
+            except ValueError:
+                pass
+        mock_input.assert_called_once()        # paused for inspection
+        mock_driver.quit.assert_called_once()  # still closed afterwards
+
+    def test_no_pause_when_headless(self):
+        mock_driver = MagicMock()
+        with patch.object(browser, "create_driver", return_value=mock_driver), \
+             patch("builtins.input") as mock_input:
+            try:
+                with managed_browser(headless=True, keep_open_on_error=True):
+                    raise ValueError("boom")
+            except ValueError:
+                pass
+        mock_input.assert_not_called()         # no point pausing a headless run
+        mock_driver.quit.assert_called_once()

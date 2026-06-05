@@ -107,6 +107,7 @@ python -m src.main --resume output/spotify_to_youtube.json \
 --spotify-only        Stop after saving YouTube links (skip UwuFufu)
 --resume FILE         Load YouTube links from JSON and skip to UwuFufu step
 --headless            Run browser without a visible window
+--keep-browser-open   On error, keep Chrome open and pause (for debugging)
 --config FILE         Path to a custom config.yaml
 --output FILE         Output base path (without extension)
 -v / --verbose        Enable debug logging
@@ -165,5 +166,6 @@ Current coverage is ~67% (the frozen `auto_uwu_legacy.py` is excluded via `.cove
 | YouTube search returns nothing | YouTube HTML structure may have changed — check `_VIDEO_ID_RE` in `src/youtube_searcher.py` |
 | Browser crashes | Try adding `--headless` flag or updating ChromeDriver |
 | Partial failure mid-run | Use `--resume output/spotify_to_youtube.json` to continue without re-scraping |
+| Need to inspect a failure | Add `--keep-browser-open` so Chrome stays open and pauses on error |
 
 Log files are written to `logs/automation_YYYYMMDD_HHMMSS.log` for debugging.

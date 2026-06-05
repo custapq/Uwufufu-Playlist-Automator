@@ -50,6 +50,41 @@ class TestLogin:
             auto.login(Credentials(email="a@b.com", password="pw"))
 
 
+class TestLoginRedirectCheck:
+    """Regression tests for the post-login URL check (uses the real WebDriverWait)."""
+
+    @staticmethod
+    def _driver_with_clickable_fields(current_url):
+        """A mock driver whose elements satisfy EC.element_to_be_clickable.
+
+        EC compares ``is_displayed() == True``, so the element must return real
+        booleans (a bare MagicMock would never be considered clickable).
+        """
+        driver = MagicMock()
+        driver.current_url = current_url
+        el = MagicMock()
+        el.is_displayed.return_value = True
+        el.is_enabled.return_value = True
+        driver.find_element.return_value = el
+        return driver
+
+    def test_www_subdomain_counts_as_success(self):
+        # The old check `url_contains("https://uwufufu.com")` failed when the app
+        # redirected to a www. subdomain after login. Leaving /auth/login = success.
+        driver = self._driver_with_clickable_fields("https://www.uwufufu.com/dashboard")
+        auto = UwuFufuAutomator(driver, AppConfig())  # real WebDriverWait
+
+        auto.login(Credentials(email="a@b.com", password="pw"))  # must not raise
+        driver.get.assert_called()
+
+    def test_stuck_on_login_page_raises(self):
+        driver = self._driver_with_clickable_fields("https://uwufufu.com/auth/login")
+        auto = UwuFufuAutomator(driver, AppConfig(webdriver_timeout=1))
+
+        with pytest.raises(LoginError):
+            auto.login(Credentials(email="a@b.com", password="pw"))
+
+
 class TestNavigate:
     def test_navigate_via_selector(self):
         driver = MagicMock()

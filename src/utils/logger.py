@@ -11,11 +11,15 @@ from pathlib import Path
 
 
 def setup_logger(
-    name: str = "uwufufu",
+    name: str = "src",
     log_dir: str = "logs",
     level: int = logging.INFO,
 ) -> logging.Logger:
     """Create a logger that writes to both stdout and a timestamped log file.
+
+    The default name is ``"src"`` — the top-level package — so that every module
+    logger created with ``logging.getLogger(__name__)`` (e.g. ``"src.main"``,
+    ``"src.uwufufu_automator"``) is a child of it and inherits these handlers.
 
     Args:
         name:    Logger name (used as the root for all child loggers).
@@ -31,6 +35,8 @@ def setup_logger(
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
+    # Don't bubble up to the root logger (avoids duplicate console output).
+    logger.propagate = False
 
     if logger.handlers:
         return logger
