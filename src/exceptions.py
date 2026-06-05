@@ -1,18 +1,18 @@
 """
-exceptions.py — Custom exceptions สำหรับ Uwufufu-Automator
+exceptions.py — Custom exceptions for Uwufufu-Automator
 
-เหตุผลที่ใช้ custom exceptions แทน Exception ทั่วไป:
-  - จับ exception ได้เฉพาะเจาะจง → error message ชัดเจนขึ้น
-  - main() แยก handler ตามประเภทปัญหาได้
-  - ง่ายต่อการ debug และ logging
+Reasons for using custom exceptions instead of plain Exception:
+  - Catch errors precisely — clearer, more actionable error messages
+  - main() can handle each error type separately
+  - Easier to debug and log
 """
 
 
 class UwufufuError(Exception):
     """
-    Base exception สำหรับทุก error ในโปรแกรมนี้
+    Base exception for all errors raised by this program.
 
-    ใช้ catch ทั้งหมดใน main():
+    Use this to catch everything in main():
         except UwufufuError as e:
             logger.error(str(e))
     """
@@ -23,22 +23,22 @@ class UwufufuError(Exception):
 # ─────────────────────────────────────────────
 
 class SpotifyError(UwufufuError):
-    """Base exception สำหรับ Spotify-related errors"""
+    """Base exception for Spotify-related errors."""
 
 
 class SpotifyPlaylistNotFoundError(SpotifyError):
     """
-    URL ของ Spotify playlist ไม่ถูกต้อง หรือ playlist เป็น private
+    The Spotify playlist URL is invalid or the playlist is private.
 
-    วิธีแก้: ตรวจสอบว่า URL ถูกต้องและ playlist เป็น Public
+    Fix: verify the URL is correct and the playlist visibility is set to Public.
     """
 
 
 class SpotifyScrapingError(SpotifyError):
     """
-    ดึงข้อมูลเพลงจาก Spotify ล้มเหลว (เช่น selector เปลี่ยน)
+    Failed to extract track data from Spotify (e.g. selectors changed).
 
-    วิธีแก้: ตรวจสอบว่า Spotify ไม่ได้เปลี่ยน HTML structure
+    Fix: check whether Spotify has updated its HTML structure and update SelectorConfig.
     """
 
 
@@ -47,14 +47,14 @@ class SpotifyScrapingError(SpotifyError):
 # ─────────────────────────────────────────────
 
 class YouTubeError(UwufufuError):
-    """Base exception สำหรับ YouTube-related errors"""
+    """Base exception for YouTube-related errors."""
 
 
 class YouTubeSearchError(YouTubeError):
     """
-    ค้นหา YouTube ล้มเหลว (เช่น rate limited หรือ network error)
+    YouTube search failed (e.g. rate limited or network error).
 
-    วิธีแก้: รอสักครู่แล้วลองใหม่, หรือตรวจสอบ internet connection
+    Fix: wait a moment and retry, or check your internet connection.
     """
 
 
@@ -63,46 +63,46 @@ class YouTubeSearchError(YouTubeError):
 # ─────────────────────────────────────────────
 
 class AutomationError(UwufufuError):
-    """Base exception สำหรับ UwuFufu browser automation errors"""
+    """Base exception for UwuFufu browser automation errors."""
 
 
 class LoginError(AutomationError):
     """
-    Login เข้า UwuFufu ไม่สำเร็จ
+    Login to UwuFufu failed.
 
-    วิธีแก้: ตรวจสอบ email และ password ว่าถูกต้อง
+    Fix: verify that the email and password are correct.
     """
 
 
 class NavigationError(AutomationError):
     """
-    ไม่สามารถ navigate ไปยังหน้าที่ต้องการได้
+    Could not navigate to the required page.
 
-    วิธีแก้: ตรวจสอบว่า UwuFufu ไม่ได้เปลี่ยน URL structure
+    Fix: check whether UwuFufu has changed its URL structure.
     """
 
 
 class GameCreationError(AutomationError):
     """
-    สร้างเกมใหม่บน UwuFufu ไม่สำเร็จ
+    Creating a new game on UwuFufu failed.
 
-    วิธีแก้: ตรวจสอบว่า form fields ยังอยู่ตาม selector ที่กำหนด
+    Fix: verify that the form fields still match the selectors in SelectorConfig.
     """
 
 
 class ElementNotFoundError(AutomationError):
     """
-    หา UI element ไม่เจอ หลัง fallback strategies ทั้งหมดล้มเหลว
+    A UI element could not be found after exhausting all fallback strategies.
 
-    วิธีแก้: อัปเดต selector ใน SelectorConfig ให้ตรงกับ UI ปัจจุบัน
+    Fix: update the relevant selector in SelectorConfig to match the current UI.
     """
 
 
 class VideoAddError(AutomationError):
     """
-    เพิ่ม YouTube video เข้าเกมไม่สำเร็จ
+    Failed to add a YouTube video to the game.
 
-    วิธีแก้: ตรวจสอบว่า YouTube URL ถูกต้องและ UwuFufu ยังรองรับ URL นั้น
+    Fix: verify the YouTube URL is valid and still supported by UwuFufu.
     """
 
 
@@ -112,15 +112,15 @@ class VideoAddError(AutomationError):
 
 class ConfigError(UwufufuError):
     """
-    ไฟล์ config.yaml มี format ผิดหรือมี field ที่ไม่รู้จัก
+    config.yaml is malformed or contains unknown fields.
 
-    วิธีแก้: ตรวจสอบ config.yaml ให้ตรงกับ AppConfig schema
+    Fix: review config.yaml and ensure it matches the AppConfig schema.
     """
 
 
 class InvalidInputError(UwufufuError):
     """
-    Input จากผู้ใช้ไม่ถูกต้อง (เช่น Spotify URL format ผิด)
+    User-provided input is invalid (e.g. a malformed Spotify URL).
 
-    วิธีแก้: ตรวจสอบ input ให้ถูกต้องตามรูปแบบที่กำหนด
+    Fix: ensure the input follows the expected format.
     """

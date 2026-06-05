@@ -1,8 +1,8 @@
 """
-config.py — Configuration management สำหรับ Uwufufu-Automator
+config.py — Configuration management for Uwufufu-Automator
 
-รวม constants ทั้งหมดที่เดิมกระจายอยู่ใน auto_uwu.py ให้อยู่ในที่เดียว
-รองรับการ override ผ่าน config.yaml (ถ้ามี) หรือใช้ค่า default
+Consolidates all constants previously scattered across auto_uwu.py into one place.
+Supports overriding values via config.yaml (if present) or falls back to defaults.
 """
 
 from __future__ import annotations
@@ -23,51 +23,51 @@ from dotenv import load_dotenv
 @dataclass
 class TimingConfig:
     """
-    ค่า delay ต่างๆ (หน่วย: วินาที) — กำหนดที่เดียว แก้ง่าย
+    All delay values used throughout the automation (in seconds).
 
-    แทนที่ magic numbers ที่กระจายอยู่ใน auto_uwu.py เดิม เช่น:
+    Replaces magic numbers scattered across auto_uwu.py, e.g.:
       time.sleep(3)   → time.sleep(timing.after_page_submit)
       time.sleep(0.3) → time.sleep(timing.after_click)
     """
 
     after_login: float = 2.0
-    """รอ redirect หลัง login สำเร็จ"""
+    """Wait for redirect after a successful login."""
 
     after_click: float = 0.3
-    """รอ DOM update หลัง click"""
+    """Wait for DOM to update after a click."""
 
     after_page_submit: float = 3.0
-    """รอ server response หลัง submit form"""
+    """Wait for server response after form submission."""
 
     spotify_initial_load: float = 3.0
-    """รอ Spotify render หลังโหลดหน้า"""
+    """Wait for Spotify to finish rendering after page load."""
 
     between_scroll: float = 1.5
-    """รอ infinite scroll โหลด tracks เพิ่ม"""
+    """Wait between scroll steps while loading all tracks."""
 
     youtube_search_min: float = 1.0
-    """delay ต่ำสุด ระหว่างค้นหา YouTube แต่ละเพลง"""
+    """Minimum delay between YouTube searches (rate-limit protection)."""
 
     youtube_search_max: float = 2.5
-    """delay สูงสุด ระหว่างค้นหา YouTube แต่ละเพลง"""
+    """Maximum delay between YouTube searches (rate-limit protection)."""
 
     between_video_add: float = 0.5
-    """รอหลังเพิ่ม video แต่ละตัวใน UwuFufu"""
+    """Wait after each video is added to the UwuFufu game."""
 
     reveal_video_input: float = 2.0
-    """รอหลังกดปุ่ม video icon ให้ input field ปรากฏ"""
+    """Wait for the video input field to appear after clicking the icon."""
 
     choices_panel: float = 2.0
-    """รอหลังเปิด Choices panel"""
+    """Wait for the Choices panel to open."""
 
 
 @dataclass
 class SelectorConfig:
     """
-    CSS selectors และ XPath สำหรับ UwuFufu และ Spotify
+    CSS selectors and XPath expressions for UwuFufu and Spotify.
 
-    รวมไว้ที่เดียว — เมื่อ UI เปลี่ยน แก้ที่นี่จุดเดียวพอ
-    แทนที่ global constants ใน auto_uwu.py เดิม
+    Centralised here so that when the UI changes, only this file needs updating.
+    Replaces the global constants in the original auto_uwu.py.
     """
 
     # --- UwuFufu Login ---
@@ -102,7 +102,7 @@ class SelectorConfig:
 
 @dataclass
 class AppConfig:
-    """Configuration หลักของแอป — ใช้แทน global constants ใน auto_uwu.py"""
+    """Main application configuration — replaces global constants in auto_uwu.py."""
 
     # --- URLs ---
     uwufufu_url: str = "https://uwufufu.com"
@@ -119,10 +119,10 @@ class AppConfig:
 
     # --- Reliability ---
     webdriver_timeout: int = 30
-    """วินาที — WebDriverWait timeout"""
+    """Seconds — WebDriverWait timeout."""
 
     max_retries: int = 3
-    """จำนวนครั้งที่ retry เมื่อล้มเหลว"""
+    """Number of retry attempts on failure."""
 
     # --- Sub-configs ---
     timing: TimingConfig = field(default_factory=TimingConfig)
@@ -130,28 +130,28 @@ class AppConfig:
 
     @property
     def output_txt(self) -> Path:
-        """Path ของ output text file"""
+        """Path to the human-readable output text file."""
         return Path(self.output_dir) / f"{self.output_filename}.txt"
 
     @property
     def output_json(self) -> Path:
-        """Path ของ output JSON file (สำหรับ resume)"""
+        """Path to the machine-readable JSON file (used for resume support)."""
         return Path(self.output_dir) / f"{self.output_filename}.json"
 
 
 # ─────────────────────────────────────────────
-# Loader
+# Loaders
 # ─────────────────────────────────────────────
 
 def load_config(config_path: Optional[str] = None) -> AppConfig:
     """
-    โหลด AppConfig จาก YAML file (ถ้ามี) หรือใช้ค่า default
+    Load AppConfig from a YAML file if it exists, otherwise return defaults.
 
     Args:
-        config_path: path ไปยัง config.yaml (default: "config.yaml")
+        config_path: Path to config.yaml (default: "config.yaml").
 
     Returns:
-        AppConfig พร้อมใช้งาน
+        A fully initialised AppConfig instance.
     """
     path = Path(config_path or "config.yaml")
 
@@ -172,10 +172,11 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
 
 def load_env_credentials() -> tuple[Optional[str], Optional[str], Optional[str]]:
     """
-    โหลด credentials จาก .env file หรือ environment variables
+    Load credentials from a .env file or environment variables.
 
     Returns:
-        (email, password, spotify_url) — None ถ้าไม่มีใน env
+        A tuple of (email, password, spotify_url).
+        Each value is None if not found in the environment.
     """
     load_dotenv()
     email = os.getenv("UWUFUFU_EMAIL")

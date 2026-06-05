@@ -1,10 +1,10 @@
 """
-models.py — Data classes สำหรับ Uwufufu-Automator
+models.py — Data classes for Uwufufu-Automator
 
-แทนที่การใช้ dict ธรรมดาในโค้ดเดิม เพื่อให้:
-- Type safety — IDE แจ้งเตือนเมื่อใช้ field ผิด
-- Readability — ชัดเจนว่าข้อมูลแต่ละตัวคืออะไร
-- Testability — ทดสอบ logic ของ model แยกได้
+Replaces plain dicts used in the original auto_uwu.py to provide:
+- Type safety  — IDE warns when accessing wrong fields
+- Readability  — each field's purpose is self-documenting
+- Testability  — model logic can be unit-tested in isolation
 """
 
 from dataclasses import dataclass, field
@@ -13,14 +13,14 @@ from typing import Optional
 
 @dataclass
 class Track:
-    """ข้อมูลเพลงที่ดึงมาจาก Spotify playlist"""
+    """A single track extracted from a Spotify playlist."""
 
     name: str
     artist: str
 
     @property
     def search_query(self) -> str:
-        """Query string สำหรับค้นหาใน YouTube"""
+        """Query string used for YouTube search."""
         return f"{self.name} {self.artist}"
 
     def __str__(self) -> str:
@@ -29,25 +29,25 @@ class Track:
 
 @dataclass
 class YoutubeLink:
-    """ผลลัพธ์การจับคู่ Track กับ YouTube video"""
+    """The result of matching a Track to a YouTube video."""
 
     track: Track
     url: Optional[str] = None
 
     @property
     def is_valid(self) -> bool:
-        """True ถ้ามี YouTube URL (ค้นหาเจอ)"""
+        """True when a YouTube URL was found for this track."""
         return self.url is not None
 
     @property
     def title(self) -> str:
-        """ชื่อที่ใช้แสดงผล: 'Track Name - Artist'"""
+        """Display title in the format 'Track Name - Artist'."""
         return str(self.track)
 
 
 @dataclass
 class GameConfig:
-    """ข้อมูลสำหรับสร้างเกมบน UwuFufu"""
+    """Configuration for a new UwuFufu game."""
 
     title: str
     description: str
@@ -55,7 +55,7 @@ class GameConfig:
 
 @dataclass
 class Credentials:
-    """ข้อมูล login สำหรับ UwuFufu"""
+    """Login credentials for UwuFufu."""
 
     email: str
     password: str
@@ -63,7 +63,7 @@ class Credentials:
 
 @dataclass
 class UserInput:
-    """รวม input ทั้งหมดที่ผู้ใช้กรอก"""
+    """All user-provided inputs bundled together."""
 
     spotify_url: str
     credentials: Credentials
