@@ -11,6 +11,7 @@ import re
 import time
 from typing import List, Optional
 
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
@@ -86,7 +87,7 @@ class SpotifyScraper:
                     (By.CSS_SELECTOR, self._selectors.tracklist_row)
                 )
             )
-        except Exception as exc:
+        except WebDriverException as exc:
             raise SpotifyPlaylistNotFoundError(
                 "Tracklist did not load. Check that the URL is correct "
                 "and the playlist is set to Public."
@@ -152,7 +153,7 @@ class SpotifyScraper:
 
                 if data and data.get("name") and data.get("artist"):
                     tracks.append(Track(name=data["name"], artist=data["artist"]))
-            except Exception as exc:
+            except WebDriverException as exc:
                 logger.debug("JS extraction failed for row %d: %s", i + 1, exc)
 
         return tracks
@@ -175,14 +176,14 @@ class SpotifyScraper:
                             By.CSS_SELECTOR, self._selectors.artists_container
                         )
                         artist_name = container.text.strip()
-                    except Exception:
+                    except WebDriverException:
                         cells = element.find_elements(By.CSS_SELECTOR, "div[role='gridcell']")
                         if len(cells) > 1:
                             artist_name = cells[1].text.strip()
 
                 if name and artist_name:
                     tracks.append(Track(name=name, artist=artist_name))
-            except Exception as exc:
+            except WebDriverException as exc:
                 logger.debug("Selenium extraction failed for row %d: %s", i + 1, exc)
 
         return tracks

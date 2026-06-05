@@ -11,6 +11,7 @@ import re
 import time
 from typing import List, Tuple
 
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -67,7 +68,7 @@ class UwuFufuAutomator:
 
             self.driver.find_element(By.CSS_SELECTOR, self._sel.login_button).click()
             self.wait.until(EC.url_contains(self.config.uwufufu_url))
-        except Exception as exc:
+        except WebDriverException as exc:
             raise LoginError(
                 "Login failed. Verify that the email and password are correct."
             ) from exc
@@ -94,7 +95,7 @@ class UwuFufuAutomator:
             if strategy():
                 try:
                     self.wait.until(lambda d: "create-game" in d.current_url)
-                except Exception:
+                except WebDriverException:
                     pass
                 logger.info("Reached Create Game page")
                 return
@@ -139,7 +140,7 @@ class UwuFufuAutomator:
             time.sleep(0.5)
             try:
                 submit_btn.click()
-            except Exception:
+            except WebDriverException:
                 self.driver.execute_script("arguments[0].click();", submit_btn)
             logger.info("Submitted game details")
         else:
@@ -161,7 +162,7 @@ class UwuFufuAutomator:
             )
             time.sleep(self._timing.after_click)
             choices_el.click()
-        except Exception:
+        except WebDriverException:
             logger.debug("Choices panel may already be open")
 
         time.sleep(self._timing.choices_panel)
@@ -211,7 +212,7 @@ class UwuFufuAutomator:
 
             logger.warning("Could not click Add button for: %s", link.title)
             return False
-        except Exception as exc:
+        except WebDriverException as exc:
             logger.warning("Error adding video %s: %s", link.title, exc)
             return False
 
@@ -247,7 +248,7 @@ class UwuFufuAutomator:
                     link.click()
                     logger.debug("Navigated via CSS selector")
                     return True
-        except Exception:
+        except WebDriverException:
             pass
         return False
 
@@ -276,7 +277,7 @@ class UwuFufuAutomator:
                         clickable = self.driver.execute_script(
                             "return arguments[0].parentNode;", clickable
                         )
-        except Exception:
+        except WebDriverException:
             pass
         return False
 
@@ -312,7 +313,7 @@ class UwuFufuAutomator:
             if clicked:
                 logger.debug("Navigated via JavaScript")
                 return True
-        except Exception:
+        except WebDriverException:
             pass
         return False
 
@@ -414,7 +415,7 @@ class UwuFufuAutomator:
                         break
                 if choices_button:
                     break
-            except Exception:
+            except WebDriverException:
                 continue
 
         if not choices_button:
@@ -448,10 +449,10 @@ class UwuFufuAutomator:
                     time.sleep(self._timing.after_click)
                     try:
                         icon.click()
-                    except Exception:
+                    except WebDriverException:
                         self.driver.execute_script("arguments[0].click();", icon)
                     return True
-        except Exception:
+        except WebDriverException:
             pass
         return False
 
@@ -469,11 +470,11 @@ class UwuFufuAutomator:
                         try:
                             self.driver.execute_script("arguments[0].click();", clickable)
                             return True
-                        except Exception:
+                        except WebDriverException:
                             clickable = self.driver.execute_script(
                                 "return arguments[0].parentNode;", clickable
                             )
-        except Exception:
+        except WebDriverException:
             pass
         return False
 
@@ -521,7 +522,7 @@ class UwuFufuAutomator:
                 return false;
             """)
             return bool(clicked)
-        except Exception:
+        except WebDriverException:
             pass
         return False
 
@@ -534,7 +535,7 @@ class UwuFufuAutomator:
             return self.wait.until(
                 EC.presence_of_element_located((By.ID, self._sel.youtube_url_input_id))
             )
-        except Exception:
+        except WebDriverException:
             pass
 
         inputs = self.driver.find_elements(By.TAG_NAME, "input")
@@ -574,7 +575,7 @@ class UwuFufuAutomator:
                 try:
                     btn.click()
                     return True
-                except Exception:
+                except WebDriverException:
                     pass
 
         buttons = self.driver.find_elements(By.TAG_NAME, "button")
@@ -591,7 +592,7 @@ class UwuFufuAutomator:
                 try:
                     btn.click()
                     return True
-                except Exception:
+                except WebDriverException:
                     pass
 
         clicked = self.driver.execute_script("""
