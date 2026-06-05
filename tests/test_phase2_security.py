@@ -69,27 +69,27 @@ class TestPasswordNotVisible:
     """Task 2.1: Password input uses getpass, not plain input()."""
 
     def test_getpass_is_used_for_password(self):
-        """Verify auto_uwu.py imports and calls getpass, not input(), for the password."""
+        """Verify main.py imports and uses getpass, not plain input(), for the password."""
         import ast
         import pathlib
 
-        source = pathlib.Path("src/auto_uwu.py").read_text(encoding="utf-8")
+        source = pathlib.Path("src/main.py").read_text(encoding="utf-8")
         tree = ast.parse(source)
 
-        # Check that 'getpass' module is imported
         imports = [
             node.names[0].name
             for node in ast.walk(tree)
             if isinstance(node, ast.Import)
         ]
-        assert "getpass" in imports, "getpass module must be imported in auto_uwu.py"
+        assert "getpass" in imports, "getpass module must be imported in main.py"
 
     def test_env_is_checked_before_prompt(self):
-        """Task 2.3: Verify get_user_credentials calls load_credentials_from_env first."""
+        """Task 2.3: Verify the input collection consults load_credentials_from_env."""
         import inspect
-        from src import auto_uwu
 
-        source = inspect.getsource(auto_uwu.get_user_credentials)
+        from src import main
+
+        source = inspect.getsource(main._resolve_credentials)
         assert "load_credentials_from_env" in source, (
-            "get_user_credentials() must call load_credentials_from_env() before prompting"
+            "_resolve_credentials() must call load_credentials_from_env() before prompting"
         )
