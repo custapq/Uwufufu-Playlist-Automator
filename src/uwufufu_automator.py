@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import re
 import time
-from typing import List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
@@ -216,8 +216,17 @@ class UwuFufuAutomator:
             logger.warning("Error adding video %s: %s", link.title, exc)
             return False
 
-    def add_all_videos(self, links: List[YoutubeLink]) -> Tuple[int, int]:
+    def add_all_videos(
+        self,
+        links: List[YoutubeLink],
+        on_added: Optional[Callable[[YoutubeLink], None]] = None,
+    ) -> Tuple[int, int]:
         """Add all valid YouTube links to the game.
+
+        Args:
+            links:    Links to add.
+            on_added: Optional callback invoked with each link right after it is
+                      added successfully — used to persist resume progress.
 
         Returns:
             (success_count, total_count)
@@ -228,6 +237,9 @@ class UwuFufuAutomator:
             logger.info("[%d/%d] Adding: %s", i + 1, total, link.title)
             if self.add_video(link):
                 success += 1
+                link.added = True
+                if on_added is not None:
+                    on_added(link)
 
         logger.info("Added %d/%d videos successfully", success, total)
         return success, total
