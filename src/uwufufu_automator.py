@@ -15,6 +15,7 @@ from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -35,6 +36,7 @@ class UwuFufuAutomator:
     """Automates UwuFufu game creation and video addition via Selenium."""
 
     def __init__(self, driver: WebDriver, config: AppConfig) -> None:
+        """Initialise the automator with a WebDriver and application config."""
         self.driver = driver
         self.config = config
         self.wait = WebDriverWait(driver, config.webdriver_timeout)
@@ -339,7 +341,7 @@ class UwuFufuAutomator:
     # Fill game details — element finders
     # ------------------------------------------------------------------ #
 
-    def _find_title_input(self):
+    def _find_title_input(self) -> Optional[WebElement]:
         title_input = None
         selectors = [
             self._sel.title_input,
@@ -381,7 +383,7 @@ class UwuFufuAutomator:
 
         return title_input
 
-    def _find_description_input(self):
+    def _find_description_input(self) -> Optional[WebElement]:
         description_input = None
         selectors = [
             self._sel.description_input,
@@ -409,7 +411,7 @@ class UwuFufuAutomator:
 
         return description_input
 
-    def _find_choices_button(self):
+    def _find_choices_button(self) -> Optional[WebElement]:
         choices_button = None
         selectors = [
             self._sel.choices_button,
@@ -542,7 +544,7 @@ class UwuFufuAutomator:
     # Add video — helpers
     # ------------------------------------------------------------------ #
 
-    def _find_youtube_input(self):
+    def _find_youtube_input(self) -> Optional[WebElement]:
         try:
             return self.wait.until(
                 EC.presence_of_element_located((By.ID, self._sel.youtube_url_input_id))

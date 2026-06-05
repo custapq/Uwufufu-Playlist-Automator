@@ -24,6 +24,7 @@ class Track:
         return f"{self.name} {self.artist}"
 
     def __str__(self) -> str:
+        """Return 'Name - Artist' for display and file output."""
         return f"{self.name} - {self.artist}"
 
 
