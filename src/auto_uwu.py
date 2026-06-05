@@ -1,3 +1,4 @@
+import getpass
 import re
 import time
 import random
@@ -37,7 +38,7 @@ def get_user_credentials():
 
     print("\n=== UwuFufu Credentials ===")
     uwu_username = input("Enter your UwuFufu email: ")
-    uwu_password = input("Enter your UwuFufu password: ")
+    uwu_password = getpass.getpass("Enter your UwuFufu password: ")
 
     print("\n=== UwuFufu Game Details ===")
     game_title = input("Enter your game title: ")
