@@ -60,6 +60,18 @@ class TimingConfig:
     choices_panel: float = 2.0
     """Wait for the Choices panel to open."""
 
+    page_settle: float = 1.0
+    """Wait for a page or form section to render after navigation."""
+
+    after_input: float = 0.2
+    """Wait after clearing or typing into a form field."""
+
+    after_scroll: float = 0.8
+    """Wait after scrolling an element into view before interacting with it."""
+
+    short_pause: float = 0.5
+    """Generic short settle delay between UI interactions."""
+
 
 @dataclass
 class SelectorConfig:

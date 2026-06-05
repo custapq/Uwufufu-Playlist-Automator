@@ -39,6 +39,7 @@ class YouTubeSearcher:
     """Searches YouTube for videos matching Spotify tracks."""
 
     def __init__(self, config: AppConfig) -> None:
+        """Initialise the searcher with application config and an HTTP session."""
         self.config = config
         self._timing = config.timing
         self._session = requests.Session()

@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from src.config import load_config, load_credentials_from_env
+from src.config import AppConfig, load_config, load_credentials_from_env
 from src.exceptions import (
     AutomationError,
     GameCreationError,
@@ -22,7 +22,7 @@ from src.exceptions import (
     YouTubeError,
 )
 from src.file_manager import load_youtube_links, mark_video_added, save_youtube_links
-from src.models import Credentials, GameConfig, UserInput
+from src.models import Credentials, GameConfig, UserInput, YoutubeLink
 from src.spotify_scraper import SpotifyScraper
 from src.utils.browser import managed_browser
 from src.utils.logger import setup_logger
@@ -168,7 +168,7 @@ def _resolve_game_config(args: argparse.Namespace) -> GameConfig:
 # Pipeline steps
 # ─────────────────────────────────────────────
 
-def _step_spotify_and_youtube(spotify_url: str, config):
+def _step_spotify_and_youtube(spotify_url: str, config: AppConfig) -> list[YoutubeLink]:
     """Scrape Spotify then search YouTube; return list of YoutubeLink."""
     with managed_browser(headless=config.headless) as (driver, _):
         scraper = SpotifyScraper(driver, config)
@@ -187,12 +187,12 @@ def _step_spotify_and_youtube(spotify_url: str, config):
 
 
 def _step_uwufufu(
-    youtube_links,
+    youtube_links: list[YoutubeLink],
     credentials: Credentials,
     game: GameConfig,
-    config,
+    config: AppConfig,
     json_path: str,
-):
+) -> int:
     """Run the UwuFufu automation step.
 
     Skips links already marked added_to_uwufufu (resume) and persists progress
@@ -221,7 +221,7 @@ def _step_uwufufu(
         print("Automation cancelled. YouTube links saved to output/")
         return 0
 
-    def _persist(link):
+    def _persist(link: YoutubeLink) -> None:
         mark_video_added(json_path, link.track.name, link.track.artist)
 
     with managed_browser(headless=config.headless) as (driver, _):
@@ -242,7 +242,7 @@ def _step_uwufufu(
 # main()
 # ─────────────────────────────────────────────
 
-def main(argv=None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     """Run the automation pipeline according to CLI arguments.
 
     Returns:

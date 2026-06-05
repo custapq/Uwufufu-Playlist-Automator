@@ -14,6 +14,7 @@ from typing import List, Optional
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -35,6 +36,7 @@ class SpotifyScraper:
     """Scrapes track data from a public Spotify playlist page."""
 
     def __init__(self, driver: WebDriver, config: AppConfig) -> None:
+        """Initialise the scraper with a WebDriver and application config."""
         self.driver = driver
         self.config = config
         self.wait = WebDriverWait(driver, config.webdriver_timeout)
@@ -104,7 +106,7 @@ class SpotifyScraper:
         logger.debug("Could not determine expected track count from page text")
         return None
 
-    def _scroll_to_load_all(self, expected: Optional[int]):
+    def _scroll_to_load_all(self, expected: Optional[int]) -> List[WebElement]:
         """Scroll down until all tracks are loaded; return the row elements."""
         rows = self.driver.find_elements(By.CSS_SELECTOR, self._selectors.tracklist_row)
         logger.info("Scrolling to load all tracks...")
@@ -130,7 +132,7 @@ class SpotifyScraper:
         logger.info("Found %d track rows in playlist", len(rows))
         return rows
 
-    def _extract_tracks_js(self, row_elements) -> List[Track]:
+    def _extract_tracks_js(self, row_elements: List[WebElement]) -> List[Track]:
         """Extract track data via JavaScript execution (faster, less flaky)."""
         tracks: List[Track] = []
         for i, element in enumerate(row_elements):
@@ -158,7 +160,7 @@ class SpotifyScraper:
 
         return tracks
 
-    def _extract_tracks_selenium(self, row_elements) -> List[Track]:
+    def _extract_tracks_selenium(self, row_elements: List[WebElement]) -> List[Track]:
         """Fallback: extract track data using Selenium element queries."""
         tracks: List[Track] = []
         for i, element in enumerate(row_elements):

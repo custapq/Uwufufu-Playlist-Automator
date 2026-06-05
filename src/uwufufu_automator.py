@@ -15,6 +15,7 @@ from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -35,6 +36,7 @@ class UwuFufuAutomator:
     """Automates UwuFufu game creation and video addition via Selenium."""
 
     def __init__(self, driver: WebDriver, config: AppConfig) -> None:
+        """Initialise the automator with a WebDriver and application config."""
         self.driver = driver
         self.config = config
         self.wait = WebDriverWait(driver, config.webdriver_timeout)
@@ -112,23 +114,23 @@ class UwuFufuAutomator:
             GameCreationError: If the page does not advance to the game editor.
         """
         logger.info("Filling in game details...")
-        time.sleep(1)
+        time.sleep(self._timing.page_settle)
 
         title_input = self._find_title_input()
         if title_input:
             title_input.clear()
-            time.sleep(0.2)
+            time.sleep(self._timing.after_input)
             title_input.send_keys(game.title)
-            time.sleep(0.2)
+            time.sleep(self._timing.after_input)
         else:
             logger.warning("Could not find title input field")
 
         description_input = self._find_description_input()
         if description_input:
             description_input.clear()
-            time.sleep(0.2)
+            time.sleep(self._timing.after_input)
             description_input.send_keys(game.description)
-            time.sleep(0.2)
+            time.sleep(self._timing.after_input)
         else:
             logger.warning("Could not find description input field")
 
@@ -137,7 +139,7 @@ class UwuFufuAutomator:
             self.driver.execute_script(
                 "arguments[0].scrollIntoView({block: 'center'});", submit_btn
             )
-            time.sleep(0.5)
+            time.sleep(self._timing.short_pause)
             try:
                 submit_btn.click()
             except WebDriverException:
@@ -204,7 +206,7 @@ class UwuFufuAutomator:
             )
             time.sleep(self._timing.after_click)
             inp.send_keys(Keys.TAB)
-            time.sleep(0.5)
+            time.sleep(self._timing.short_pause)
 
             if self._click_add_button():
                 time.sleep(self._timing.between_video_add)
@@ -256,7 +258,7 @@ class UwuFufuAutomator:
                     self.driver.execute_script(
                         "arguments[0].scrollIntoView({block: 'center'});", link
                     )
-                    time.sleep(0.8)
+                    time.sleep(self._timing.after_scroll)
                     link.click()
                     logger.debug("Navigated via CSS selector")
                     return True
@@ -282,7 +284,7 @@ class UwuFufuAutomator:
                             self.driver.execute_script(
                                 "arguments[0].scrollIntoView({block: 'center'});", clickable
                             )
-                            time.sleep(1)
+                            time.sleep(self._timing.page_settle)
                             self.driver.execute_script("arguments[0].click();", clickable)
                             logger.debug("Navigated via text search")
                             return True
@@ -332,14 +334,14 @@ class UwuFufuAutomator:
     def _try_create_game_by_direct_navigation(self) -> bool:
         logger.debug("Navigating directly to create-game URL")
         self.driver.get(self.config.create_game_url)
-        time.sleep(1)
+        time.sleep(self._timing.page_settle)
         return True
 
     # ------------------------------------------------------------------ #
     # Fill game details — element finders
     # ------------------------------------------------------------------ #
 
-    def _find_title_input(self):
+    def _find_title_input(self) -> Optional[WebElement]:
         title_input = None
         selectors = [
             self._sel.title_input,
@@ -381,7 +383,7 @@ class UwuFufuAutomator:
 
         return title_input
 
-    def _find_description_input(self):
+    def _find_description_input(self) -> Optional[WebElement]:
         description_input = None
         selectors = [
             self._sel.description_input,
@@ -409,7 +411,7 @@ class UwuFufuAutomator:
 
         return description_input
 
-    def _find_choices_button(self):
+    def _find_choices_button(self) -> Optional[WebElement]:
         choices_button = None
         selectors = [
             self._sel.choices_button,
@@ -478,7 +480,7 @@ class UwuFufuAutomator:
                         self.driver.execute_script(
                             "arguments[0].scrollIntoView({block: 'center'});", clickable
                         )
-                        time.sleep(0.5)
+                        time.sleep(self._timing.short_pause)
                         try:
                             self.driver.execute_script("arguments[0].click();", clickable)
                             return True
@@ -542,7 +544,7 @@ class UwuFufuAutomator:
     # Add video — helpers
     # ------------------------------------------------------------------ #
 
-    def _find_youtube_input(self):
+    def _find_youtube_input(self) -> Optional[WebElement]:
         try:
             return self.wait.until(
                 EC.presence_of_element_located((By.ID, self._sel.youtube_url_input_id))
