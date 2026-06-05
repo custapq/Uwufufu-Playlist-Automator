@@ -1,65 +1,157 @@
 # Spotify to UwuFufu Automation Tool
 
-A Python automation tool that gets tracks from a Spotify playlist, finds their corresponding YouTube videos, and automatically uploads them to a UwuFufu quiz game.
+A Python automation tool that extracts tracks from a public Spotify playlist, finds matching YouTube videos for each track, and automatically creates a UwuFufu quiz game with those videos.
 
 ## Features
 
-- Extracts tracks from any public Spotify playlist
-- Automatically searches YouTube for each track to find matching videos
-- Creates a new UwuFufu game
-- Automatically adds all YouTube videos to the game
-- Outputs a text file with all track-YouTube mappings
+- Scrapes any public Spotify playlist (no API key required)
+- Searches YouTube for each track (no API key required)
+- Creates a UwuFufu game and adds all videos automatically
+- Saves results to `output/spotify_to_youtube.json` — resume if anything fails
+- Supports `.env` file so you never have to type credentials twice
+- Headless mode, verbose logging, and flexible CLI flags
 
 ## Requirements
 
-- Python 3.6+
-- Chrome browser installed
+- Python 3.8+
+- Google Chrome installed
 - Internet connection
 
 ## Installation
 
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/spotify-uwufufu-automation.git
-   cd spotify-uwufufu-automation
-   ```
+```bash
+git clone https://github.com/custapq/Uwufufu-Automator.git
+cd Uwufufu-Automator
+pip install -r requirements.txt
+```
 
-2. Install the required Python packages:
-   ```
-   pip install selenium requests
-   ```
+For running tests:
 
-3. Make sure you have the Chrome browser installed on your system.
+```bash
+pip install -r requirements-dev.txt
+```
+
+## Configuration (optional)
+
+Copy `.env.example` to `.env` and fill in your credentials so the tool loads them automatically:
+
+```ini
+UWUFUFU_EMAIL=your_email@example.com
+UWUFUFU_PASSWORD=your_password
+SPOTIFY_PLAYLIST_URL=https://open.spotify.com/playlist/xxxxx
+```
+
+> `.env` is listed in `.gitignore` and will never be committed.
 
 ## Usage
 
-1. Run the script:
-   ```
-   python auto_uwu.py
-   ```
+### Interactive mode (simplest)
 
-2. When prompted, enter the following information:
-   - Your Spotify playlist URL (must be public)
-   - Your UwuFufu email and password
-   - The title and description for your new UwuFufu game
+```bash
+python -m src.main
+```
 
-3. The script will then:
-   - Extract tracks from the Spotify playlist
-   - Search YouTube for each track
-   - Log in to UwuFufu
-   - Create a new game
-   - Add all the YouTube videos automatically
-  
-4. Feel free to test out different sleep times between operations to see if it can be automated faster
+The tool will prompt for each required value.
 
-5. Once complete, you'll see the UwuFufu game editor with all your videos added. You can then review and publish your game.
+### One-liner
 
-## Output
+```bash
+python -m src.main \
+  --spotify-url "https://open.spotify.com/playlist/..." \
+  --email "user@example.com" \
+  --title "My Music Quiz" \
+  --description "Guess the song!"
+```
 
-The script generates a file called `spotify_to_youtube.txt` which contains a mapping of all tracks to their found YouTube URLs.
+### Load credentials from `.env`
+
+```bash
+python -m src.main --use-env --title "My Quiz" --description "Best songs"
+```
+
+### Headless mode (no browser window)
+
+```bash
+python -m src.main --headless
+```
+
+### Spotify + YouTube only (skip UwuFufu)
+
+Useful for previewing results before creating a game:
+
+```bash
+python -m src.main --spotify-only --spotify-url "https://open.spotify.com/playlist/..."
+```
+
+Output is saved to `output/spotify_to_youtube.json` and `.txt`.
+
+### Resume after a failure
+
+If the UwuFufu step fails partway through, skip the slow Spotify + YouTube steps and go straight to automation:
+
+```bash
+python -m src.main --resume output/spotify_to_youtube.json \
+  --email "user@example.com" \
+  --title "My Quiz" \
+  --description "Best songs"
+```
+
+### All flags
+
+```
+--spotify-url URL     Spotify playlist URL
+--email EMAIL         UwuFufu account email
+--title TEXT          Game title
+--description TEXT    Game description
+--use-env             Load credentials from .env
+--spotify-only        Stop after saving YouTube links (skip UwuFufu)
+--resume FILE         Load YouTube links from JSON and skip to UwuFufu step
+--headless            Run browser without a visible window
+--config FILE         Path to a custom config.yaml
+--output FILE         Output base path (without extension)
+-v / --verbose        Enable debug logging
+```
+
+## Project Structure
+
+```
+Uwufufu-Automator/
+├── src/
+│   ├── main.py                  ← Entry point + CLI
+│   ├── spotify_scraper.py       ← Spotify playlist scraping
+│   ├── youtube_searcher.py      ← YouTube video search
+│   ├── uwufufu_automator.py     ← UwuFufu browser automation
+│   ├── file_manager.py          ← Save / load JSON results
+│   ├── config.py                ← AppConfig, TimingConfig, SelectorConfig
+│   ├── models.py                ← Track, YoutubeLink, Credentials, GameConfig
+│   ├── exceptions.py            ← Custom exception hierarchy
+│   └── utils/
+│       ├── browser.py           ← WebDriver factory + managed_browser context
+│       ├── logger.py            ← Logging setup (console + file)
+│       └── retry.py             ← @retry decorator with exponential backoff
+├── tests/
+├── .env.example
+├── .gitignore
+├── requirements.txt
+└── requirements-dev.txt
+```
+
+## Running Tests
+
+```bash
+pytest
+pytest --cov=src       # with coverage report
+```
 
 ## Troubleshooting
 
-- **Videos not being added**: If the script is failing to add videos, try reducing the number of videos or check if the UwuFufu interface has changed.
-- **Login issues**: Make sure your UwuFufu credentials are correct.
-- **Spotify playlist not loading**: Make sure your Spotify playlist is public and the URL is correct.
+| Problem | Fix |
+|---------|-----|
+| Spotify playlist not loading | Make sure the playlist is set to **Public** |
+| Login fails | Double-check email and password in `.env` or when prompted |
+| Videos not added | UwuFufu may have updated its UI — check `SelectorConfig` in `src/config.py` |
+| YouTube search returns nothing | YouTube HTML structure may have changed — check `_VIDEO_ID_RE` in `src/youtube_searcher.py` |
+| Browser crashes | Try adding `--headless` flag or updating ChromeDriver |
+| Partial failure mid-run | Use `--resume output/spotify_to_youtube.json` to continue without re-scraping |
+
+Log files are written to `logs/automation_YYYYMMDD_HHMMSS.log` for debugging.
