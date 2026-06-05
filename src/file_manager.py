@@ -33,7 +33,7 @@ def save_youtube_links(links: List[YoutubeLink], output_dir: str, filename: str)
             "track_name": link.track.name,
             "artist": link.track.artist,
             "url": link.url,
-            "added_to_uwufufu": False,
+            "added_to_uwufufu": link.added,
         }
         for link in links
     ]
@@ -65,6 +65,7 @@ def load_youtube_links(json_path: str) -> List[YoutubeLink]:
         YoutubeLink(
             track=Track(name=item["track_name"], artist=item["artist"]),
             url=item.get("url"),
+            added=item.get("added_to_uwufufu", False),
         )
         for item in data
     ]

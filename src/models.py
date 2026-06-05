@@ -33,6 +33,8 @@ class YoutubeLink:
 
     track: Track
     url: Optional[str] = None
+    added: bool = False
+    """True once this video has been added to UwuFufu (used for --resume)."""
 
     @property
     def is_valid(self) -> bool:

@@ -21,7 +21,7 @@ from src.exceptions import (
     UwufufuError,
     YouTubeError,
 )
-from src.file_manager import load_youtube_links, save_youtube_links
+from src.file_manager import load_youtube_links, mark_video_added, save_youtube_links
 from src.models import Credentials, GameConfig, UserInput
 from src.spotify_scraper import SpotifyScraper
 from src.utils.browser import managed_browser
@@ -186,19 +186,43 @@ def _step_spotify_and_youtube(spotify_url: str, config):
     return youtube_links
 
 
-def _step_uwufufu(youtube_links, credentials: Credentials, game: GameConfig, config):
-    """Run the UwuFufu automation step."""
+def _step_uwufufu(
+    youtube_links,
+    credentials: Credentials,
+    game: GameConfig,
+    config,
+    json_path: str,
+):
+    """Run the UwuFufu automation step.
+
+    Skips links already marked added_to_uwufufu (resume) and persists progress
+    to ``json_path`` after each successful video add.
+    """
     valid_links = [link for link in youtube_links if link.is_valid]
     if not valid_links:
         logger.error("❌ No valid YouTube links found — cannot continue")
         return 1
 
-    logger.info("Found %d/%d valid YouTube links", len(valid_links), len(youtube_links))
+    pending = [link for link in valid_links if not link.added]
+    already_added = len(valid_links) - len(pending)
+
+    if already_added:
+        logger.info("Resuming — %d videos already added, %d remaining",
+                    already_added, len(pending))
+    else:
+        logger.info("Found %d/%d valid YouTube links", len(valid_links), len(youtube_links))
+
+    if not pending:
+        logger.info("🎉 All videos were already added — nothing to do")
+        return 0
 
     proceed = input("\nReady to proceed with UwuFufu automation? (y/n): ").lower()
     if proceed != "y":
         print("Automation cancelled. YouTube links saved to output/")
         return 0
+
+    def _persist(link):
+        mark_video_added(json_path, link.track.name, link.track.artist)
 
     with managed_browser(headless=config.headless) as (driver, _):
         automator = UwuFufuAutomator(driver, config)
@@ -207,7 +231,7 @@ def _step_uwufufu(youtube_links, credentials: Credentials, game: GameConfig, con
         automator.fill_game_details(game)
         automator.open_choices_panel()
         automator.reveal_video_input()
-        success, total = automator.add_all_videos(valid_links)
+        success, total = automator.add_all_videos(pending, on_added=_persist)
         logger.info("🎉 Added %d/%d videos to UwuFufu", success, total)
         input("\nPress Enter to close the browser...")
 
@@ -250,7 +274,7 @@ def main(argv=None) -> int:
             youtube_links = load_youtube_links(args.resume)
             credentials = _resolve_credentials(args)
             game = _resolve_game_config(args)
-            return _step_uwufufu(youtube_links, credentials, game, config)
+            return _step_uwufufu(youtube_links, credentials, game, config, args.resume)
 
         # ── --spotify-only mode ────────────────────────────────────────
         spotify_url = _resolve_spotify_url(args)
@@ -265,7 +289,7 @@ def main(argv=None) -> int:
         # ── Full pipeline ──────────────────────────────────────────────
         credentials = _resolve_credentials(args)
         game = _resolve_game_config(args)
-        return _step_uwufufu(youtube_links, credentials, game, config)
+        return _step_uwufufu(youtube_links, credentials, game, config, str(config.output_json))
 
     except SpotifyError as exc:
         return _report_error("Spotify error", exc)
