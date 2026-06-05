@@ -112,23 +112,23 @@ class UwuFufuAutomator:
             GameCreationError: If the page does not advance to the game editor.
         """
         logger.info("Filling in game details...")
-        time.sleep(1)
+        time.sleep(self._timing.page_settle)
 
         title_input = self._find_title_input()
         if title_input:
             title_input.clear()
-            time.sleep(0.2)
+            time.sleep(self._timing.after_input)
             title_input.send_keys(game.title)
-            time.sleep(0.2)
+            time.sleep(self._timing.after_input)
         else:
             logger.warning("Could not find title input field")
 
         description_input = self._find_description_input()
         if description_input:
             description_input.clear()
-            time.sleep(0.2)
+            time.sleep(self._timing.after_input)
             description_input.send_keys(game.description)
-            time.sleep(0.2)
+            time.sleep(self._timing.after_input)
         else:
             logger.warning("Could not find description input field")
 
@@ -137,7 +137,7 @@ class UwuFufuAutomator:
             self.driver.execute_script(
                 "arguments[0].scrollIntoView({block: 'center'});", submit_btn
             )
-            time.sleep(0.5)
+            time.sleep(self._timing.short_pause)
             try:
                 submit_btn.click()
             except WebDriverException:
@@ -204,7 +204,7 @@ class UwuFufuAutomator:
             )
             time.sleep(self._timing.after_click)
             inp.send_keys(Keys.TAB)
-            time.sleep(0.5)
+            time.sleep(self._timing.short_pause)
 
             if self._click_add_button():
                 time.sleep(self._timing.between_video_add)
@@ -256,7 +256,7 @@ class UwuFufuAutomator:
                     self.driver.execute_script(
                         "arguments[0].scrollIntoView({block: 'center'});", link
                     )
-                    time.sleep(0.8)
+                    time.sleep(self._timing.after_scroll)
                     link.click()
                     logger.debug("Navigated via CSS selector")
                     return True
@@ -282,7 +282,7 @@ class UwuFufuAutomator:
                             self.driver.execute_script(
                                 "arguments[0].scrollIntoView({block: 'center'});", clickable
                             )
-                            time.sleep(1)
+                            time.sleep(self._timing.page_settle)
                             self.driver.execute_script("arguments[0].click();", clickable)
                             logger.debug("Navigated via text search")
                             return True
@@ -332,7 +332,7 @@ class UwuFufuAutomator:
     def _try_create_game_by_direct_navigation(self) -> bool:
         logger.debug("Navigating directly to create-game URL")
         self.driver.get(self.config.create_game_url)
-        time.sleep(1)
+        time.sleep(self._timing.page_settle)
         return True
 
     # ------------------------------------------------------------------ #
@@ -478,7 +478,7 @@ class UwuFufuAutomator:
                         self.driver.execute_script(
                             "arguments[0].scrollIntoView({block: 'center'});", clickable
                         )
-                        time.sleep(0.5)
+                        time.sleep(self._timing.short_pause)
                         try:
                             self.driver.execute_script("arguments[0].click();", clickable)
                             return True
