@@ -69,7 +69,11 @@ class UwuFufuAutomator:
             time.sleep(self._timing.after_click)
 
             self.driver.find_element(By.CSS_SELECTOR, self._sel.login_button).click()
-            self.wait.until(EC.url_contains(self.config.uwufufu_url))
+            # Login succeeds once we navigate away from the /auth/login page.
+            # (The old check `url_contains("https://uwufufu.com")` passed immediately
+            #  because the login page already contains that string, and broke when the
+            #  app redirected to a www. subdomain after login.)
+            self.wait.until(lambda d: "/auth/login" not in d.current_url)
         except WebDriverException as exc:
             raise LoginError(
                 "Login failed. Verify that the email and password are correct."
