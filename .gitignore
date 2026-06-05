@@ -1,0 +1,42 @@
+# === Sensitive / Credentials ===
+.env
+config.yaml
+
+# === Program Output ===
+output/
+spotify_to_youtube.txt
+spotify_to_youtube.json
+
+# === Logs ===
+logs/
+*.log
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# === Virtual Environment ===
+venv/
+env/
+.venv/
+ENV/
+
+# === Testing / Coverage ===
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# === IDE ===
+.vscode/
+.idea/
+*.suo
+*.user
+
+# === OS ===
+.DS_Store
+Thumbs.db
