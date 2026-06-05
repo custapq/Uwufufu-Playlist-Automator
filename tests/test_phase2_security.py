@@ -11,6 +11,18 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 
+@pytest.fixture(autouse=True)
+def _no_dotenv_file():
+    """Stop load_dotenv() from reading a real .env on disk.
+
+    Without this, a developer's actual .env leaks into the patched os.environ and
+    makes the "no credentials" tests fail. Patching it to a no-op keeps the tests
+    dependent only on the os.environ each test sets up.
+    """
+    with patch("src.config.load_dotenv", return_value=False):
+        yield
+
+
 class TestLoadCredentialsFromEnv:
     """Task 2.4 + 2.5: Credential loading from environment."""
 
