@@ -1,8 +1,6 @@
 [run]
 source = src
 omit =
-    # Frozen reference copy of the original script — scheduled for deletion in Phase 8.
-    src/auto_uwu_legacy.py
     src/__init__.py
     src/utils/__init__.py
 
