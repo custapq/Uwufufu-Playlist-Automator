@@ -63,8 +63,17 @@ def managed_browser(
     headless: bool = False,
     window_size: str = "1920,1080",
     timeout: int = 30,
+    keep_open_on_error: bool = False,
 ) -> Generator[Tuple[WebDriver, WebDriverWait], None, None]:
     """Context manager that creates a Chrome driver and guarantees driver.quit() on exit.
+
+    Args:
+        headless:           Run Chrome without a visible window.
+        window_size:        Browser window size, e.g. "1920,1080".
+        timeout:            WebDriverWait timeout in seconds.
+        keep_open_on_error: If True (and not headless), pause for Enter before
+                            closing the browser when an exception occurs — useful
+                            for inspecting the page state that caused a failure.
 
     Yields:
         (driver, wait) — the WebDriver instance and a pre-configured WebDriverWait.
@@ -78,6 +87,11 @@ def managed_browser(
     wait = WebDriverWait(driver, timeout)
     try:
         yield driver, wait
+    except BaseException:
+        if keep_open_on_error and not headless:
+            logger.warning("An error occurred — leaving the browser open for inspection.")
+            input("Press Enter to close the browser...")
+        raise
     finally:
         driver.quit()
         logger.debug("Chrome WebDriver closed")

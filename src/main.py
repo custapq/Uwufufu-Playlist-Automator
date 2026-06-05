@@ -113,6 +113,11 @@ examples:
         action="store_true",
         help="Run browser without a visible window",
     )
+    parser.add_argument(
+        "--keep-browser-open",
+        action="store_true",
+        help="On error, leave the browser open and pause (for debugging)",
+    )
 
     # ── Config / output ─────────────────────────────────────────────────
     parser.add_argument("--config", metavar="FILE", help="Path to config.yaml")
@@ -168,9 +173,13 @@ def _resolve_game_config(args: argparse.Namespace) -> GameConfig:
 # Pipeline steps
 # ─────────────────────────────────────────────
 
-def _step_spotify_and_youtube(spotify_url: str, config: AppConfig) -> list[YoutubeLink]:
+def _step_spotify_and_youtube(
+    spotify_url: str, config: AppConfig, keep_open: bool = False
+) -> list[YoutubeLink]:
     """Scrape Spotify then search YouTube; return list of YoutubeLink."""
-    with managed_browser(headless=config.headless) as (driver, _):
+    with managed_browser(
+        headless=config.headless, keep_open_on_error=keep_open
+    ) as (driver, _):
         scraper = SpotifyScraper(driver, config)
         tracks = scraper.get_tracks(spotify_url)
 
@@ -192,6 +201,7 @@ def _step_uwufufu(
     game: GameConfig,
     config: AppConfig,
     json_path: str,
+    keep_open: bool = False,
 ) -> int:
     """Run the UwuFufu automation step.
 
@@ -224,7 +234,9 @@ def _step_uwufufu(
     def _persist(link: YoutubeLink) -> None:
         mark_video_added(json_path, link.track.name, link.track.artist)
 
-    with managed_browser(headless=config.headless) as (driver, _):
+    with managed_browser(
+        headless=config.headless, keep_open_on_error=keep_open
+    ) as (driver, _):
         automator = UwuFufuAutomator(driver, config)
         automator.login(credentials)
         automator.navigate_to_create_game()
@@ -274,12 +286,17 @@ def main(argv: Optional[list[str]] = None) -> int:
             youtube_links = load_youtube_links(args.resume)
             credentials = _resolve_credentials(args)
             game = _resolve_game_config(args)
-            return _step_uwufufu(youtube_links, credentials, game, config, args.resume)
+            return _step_uwufufu(
+                youtube_links, credentials, game, config, args.resume,
+                keep_open=args.keep_browser_open,
+            )
 
         # ── --spotify-only mode ────────────────────────────────────────
         spotify_url = _resolve_spotify_url(args)
 
-        youtube_links = _step_spotify_and_youtube(spotify_url, config)
+        youtube_links = _step_spotify_and_youtube(
+            spotify_url, config, keep_open=args.keep_browser_open
+        )
 
         if args.spotify_only:
             valid = sum(1 for l in youtube_links if l.is_valid)
@@ -289,7 +306,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         # ── Full pipeline ──────────────────────────────────────────────
         credentials = _resolve_credentials(args)
         game = _resolve_game_config(args)
-        return _step_uwufufu(youtube_links, credentials, game, config, str(config.output_json))
+        return _step_uwufufu(
+            youtube_links, credentials, game, config, str(config.output_json),
+            keep_open=args.keep_browser_open,
+        )
 
     except SpotifyError as exc:
         return _report_error("Spotify error", exc)
