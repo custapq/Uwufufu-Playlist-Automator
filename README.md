@@ -38,6 +38,7 @@ Copy `.env.example` to `.env` and fill in your credentials so the tool loads the
 You MUST provide the API keys for Spotify and YouTube:
 
 1. **Spotify**: Create an app on the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) to get a `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`.
+   - **Important**: You must also add `http://127.0.0.1:8888/callback` to the **Redirect URIs** section in your App Settings. This is required for the browser login flow.
 2. **YouTube**: Create a project on the [Google Cloud Console](https://console.cloud.google.com/), enable the **YouTube Data API v3**, and generate a `YOUTUBE_API_KEY`.
 
 ```ini
@@ -57,6 +58,14 @@ YOUTUBE_API_KEY=your_youtube_api_key_here
 ```
 
 > `.env` is listed in `.gitignore` and will never be committed.
+
+## ⚠️ Spotify API Limitation (February 2026)
+
+Due to [Spotify API changes in February 2026](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide), **you can only fetch tracks from Spotify playlists that you own or collaborate on.** 
+
+- To use a Spotify playlist, you must log in via the browser using the `--spotify-login` flag on your first run. This authorizes the tool to read your playlists.
+- Public Spotify playlists owned by others will **not** return any tracks.
+- **Alternative**: YouTube playlists do not have this restriction. You can use any public YouTube playlist URL without needing a browser login.
 
 ## Usage
 
@@ -93,10 +102,17 @@ python -m src.main --headless
 
 ### Extract links only (skip UwuFufu)
 
-Useful for previewing results before creating a game. Accepts a Spotify or YouTube playlist:
+Useful for previewing results before creating a game. Accepts a Spotify or YouTube playlist.
+For Spotify, you must use `--spotify-login` on the first run to authorize the app:
 
 ```bash
+# First time using Spotify (opens browser to log in)
+python -m src.main --spotify-login --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
+
+# Subsequent runs (uses cached token)
 python -m src.main --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
+
+# YouTube playlists work immediately (no login required)
 python -m src.main --spotify-only --playlist-url "https://www.youtube.com/playlist?list=..."
 ```
 
@@ -122,6 +138,7 @@ python -m src.main --resume output/spotify_to_youtube.json \
 --description TEXT    Game description
 --use-env             Load credentials from .env
 --spotify-only        Stop after saving YouTube links (skip UwuFufu)
+--spotify-login       Force a fresh Spotify browser login (Authorization Code flow)
 --resume FILE         Load YouTube links from JSON and skip to UwuFufu step
 --headless            Run browser without a visible window
 --keep-browser-open   On error, keep Chrome open and pause (for debugging)
@@ -181,7 +198,7 @@ Current coverage is ~76% (the API modules sit at 98–100%).
 |---------|-----|
 | Playlist not loading | Make sure the Spotify/YouTube playlist is set to **Public** |
 | `Unrecognised playlist URL` | The link isn't a Spotify or YouTube playlist — check `PLAYLIST_URL` / `--playlist-url` |
-| Spotify 403 / no tracks | Verify `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` in `.env` |
+| Spotify 403 / no tracks | The playlist must be owned by you. Ensure you used `--spotify-login` and that the redirect URI matches exactly. |
 | YouTube quota exceeded | The YouTube Data API has a daily quota — wait for reset or use a new `YOUTUBE_API_KEY` |
 | Login fails | Double-check email and password in `.env` or when prompted |
 | Videos not added | UwuFufu may have updated its UI — check `SelectorConfig` in `src/config.py` |
