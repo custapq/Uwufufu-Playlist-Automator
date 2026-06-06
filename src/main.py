@@ -17,6 +17,7 @@ from src.exceptions import (
     SpotifyError,
     UwufufuError,
     YouTubeError,
+    YouTubePlaylistError,
 )
 from src.utils.playlist import detect_source
 from src.file_manager import load_youtube_links, mark_video_added, save_youtube_links
@@ -187,10 +188,9 @@ def _step_extract_links(
         youtube_links = youtube_api.search_all(tracks)
 
     elif source == "youtube":
-        raise NotImplementedError(
-            "YouTube playlist support is coming in Task 3. "
-            "Use a Spotify playlist URL for now."
-        )
+        youtube_api = YouTubeAPI(api_creds)
+        youtube_links = youtube_api.get_playlist_tracks(playlist_url)
+        logger.info("Extracted %d videos from YouTube playlist", len(youtube_links))
 
     else:
         raise InvalidInputError(f"Unknown playlist source: {source}")
@@ -323,6 +323,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         return _report_error("Invalid playlist URL", exc)
     except SpotifyError as exc:
         return _report_error("Spotify error", exc)
+    except YouTubePlaylistError as exc:
+        return _report_error("YouTube playlist error", exc)
     except YouTubeError as exc:
         return _report_error("YouTube error", exc)
     except LoginError as exc:
