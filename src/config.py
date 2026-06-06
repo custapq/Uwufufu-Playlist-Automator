@@ -206,7 +206,7 @@ def load_credentials_from_env() -> Optional["UserInputFromEnv"]:
     """
     from types import SimpleNamespace
 
-    email, password, spotify_url = load_env_credentials()
+    email, password, playlist_url = load_env_credentials()
 
     if not email or not password:
         return None
