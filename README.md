@@ -5,8 +5,8 @@ A Python automation tool that takes a **Spotify or YouTube playlist** link, reso
 ## Features
 
 - **Auto-detects** whether the playlist link is Spotify or YouTube
-- Fast and reliable Spotify playlist extraction via the **Spotify API**, then matches each track on the **YouTube Data API v3**
-- YouTube playlist support that takes each video's URL **directly** from the playlist (no extra search, lower quota usage)
+- Fast and reliable Spotify playlist extraction via the **Spotify API**, then matches each track using **yt-dlp**
+- YouTube playlist support that extracts videos **directly** from the playlist using **yt-dlp** (no YouTube API keys or quotas to worry about)
 - Creates a UwuFufu game and adds all videos automatically via browser automation
 - Saves results to `output/spotify_to_youtube.json` — resume if anything fails
 - Supports `.env` file so you never have to type credentials twice
@@ -35,11 +35,10 @@ pip install -r requirements-dev.txt
 ## Configuration (required)
 
 Copy `.env.example` to `.env` and fill in your credentials so the tool loads them automatically.
-You MUST provide the API keys for Spotify and YouTube:
+You MUST provide the API credentials for Spotify:
 
 1. **Spotify**: Create an app on the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) to get a `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`.
    - **Important**: You must also add `http://127.0.0.1:8888/callback` to the **Redirect URIs** section in your App Settings. This is required for the browser login flow.
-2. **YouTube**: Create a project on the [Google Cloud Console](https://console.cloud.google.com/), enable the **YouTube Data API v3**, and generate a `YOUTUBE_API_KEY`.
 
 ```ini
 # --- UwuFufu Credentials ---
@@ -52,9 +51,6 @@ PLAYLIST_URL=https://open.spotify.com/playlist/xxxxx
 # --- Spotify API Credentials ---
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-
-# --- YouTube API Credentials ---
-YOUTUBE_API_KEY=your_youtube_api_key_here
 ```
 
 > `.env` is listed in `.gitignore` and will never be committed.
@@ -154,7 +150,7 @@ Uwufufu-Automator/
 ├── src/
 │   ├── main.py                  ← Entry point + CLI
 │   ├── spotify_api.py           ← Spotify playlist extraction (REST API)
-│   ├── youtube_api.py           ← YouTube video search (REST API)
+│   ├── youtube_api.py           ← YouTube video search & playlist extraction (yt-dlp)
 │   ├── uwufufu_automator.py     ← UwuFufu browser automation
 │   ├── file_manager.py          ← Save / load JSON results
 │   ├── config.py                ← AppConfig, TimingConfig, SelectorConfig
@@ -199,7 +195,6 @@ Current coverage is ~76% (the API modules sit at 98–100%).
 | Playlist not loading | Make sure the Spotify/YouTube playlist is set to **Public** |
 | `Unrecognised playlist URL` | The link isn't a Spotify or YouTube playlist — check `PLAYLIST_URL` / `--playlist-url` |
 | Spotify 403 / no tracks | The playlist must be owned by you. Ensure you used `--spotify-login` and that the redirect URI matches exactly. |
-| YouTube quota exceeded | The YouTube Data API has a daily quota — wait for reset or use a new `YOUTUBE_API_KEY` |
 | Login fails | Double-check email and password in `.env` or when prompted |
 | Videos not added | UwuFufu may have updated its UI — check `SelectorConfig` in `src/config.py` |
 | Browser crashes | Try adding `--headless` flag or updating ChromeDriver |
