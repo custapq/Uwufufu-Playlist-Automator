@@ -186,8 +186,8 @@ def load_env_credentials() -> tuple[Optional[str], Optional[str], Optional[str]]
     load_dotenv()
     email = os.getenv("UWUFUFU_EMAIL")
     password = os.getenv("UWUFUFU_PASSWORD")
-    spotify_url = os.getenv("SPOTIFY_PLAYLIST_URL")
-    return email, password, spotify_url
+    playlist_url = os.getenv("PLAYLIST_URL")
+    return email, password, playlist_url
 
 
 def load_credentials_from_env() -> Optional["UserInputFromEnv"]:
@@ -214,5 +214,37 @@ def load_credentials_from_env() -> Optional["UserInputFromEnv"]:
     return SimpleNamespace(
         email=email,
         password=password,
-        spotify_url=spotify_url,  # may be None — caller can prompt if needed
+        playlist_url=playlist_url,  # may be None — caller can prompt if needed
+    )
+
+
+def load_api_credentials() -> "ApiCredentials":
+    """
+    Load Spotify and YouTube API credentials from the environment.
+
+    Raises:
+        ConfigError: If any required API credentials are missing.
+    """
+    from src.models import ApiCredentials
+    from src.exceptions import ConfigError
+
+    load_dotenv()
+    spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
+    spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+    youtube_api_key = os.getenv("YOUTUBE_API_KEY")
+
+    missing = []
+    if not spotify_client_id: missing.append("SPOTIFY_CLIENT_ID")
+    if not spotify_client_secret: missing.append("SPOTIFY_CLIENT_SECRET")
+    if not youtube_api_key: missing.append("YOUTUBE_API_KEY")
+
+    if missing:
+        raise ConfigError(
+            f"Missing required API credentials in .env: {', '.join(missing)}"
+        )
+
+    return ApiCredentials(
+        spotify_client_id=spotify_client_id,
+        spotify_client_secret=spotify_client_secret,
+        youtube_api_key=youtube_api_key,
     )

@@ -7,23 +7,26 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from src.config import AppConfig, load_config, load_credentials_from_env
+from src.config import AppConfig, load_config, load_credentials_from_env, load_api_credentials
 from src.exceptions import (
     AutomationError,
     GameCreationError,
+    InvalidInputError,
     LoginError,
     NavigationError,
     SpotifyError,
     UwufufuError,
     YouTubeError,
 )
+from src.utils.playlist import detect_source
 from src.file_manager import load_youtube_links, mark_video_added, save_youtube_links
-from src.models import Credentials, GameConfig, UserInput, YoutubeLink
-from src.spotify_scraper import SpotifyScraper
+from src.models import Credentials, GameConfig, UserInput, YoutubeLink, ApiCredentials
+from src.spotify_api import SpotifyAPI
 from src.utils.browser import managed_browser
 from src.utils.logger import setup_logger
+from src.utils.spotify_auth import SpotifyTokenManager
 from src.uwufufu_automator import UwuFufuAutomator
-from src.youtube_searcher import YouTubeSearcher
+from src.youtube_api import YouTubeAPI
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +52,15 @@ def _report_error(message: str, exc: Exception) -> int:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="uwufufu-automator",
-        description="Spotify to UwuFufu Automation Tool",
+        description="Playlist to UwuFufu Automation Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
   # fully interactive
   python -m src.main
 
-  # one-liner
-  python -m src.main --spotify-url "https://open.spotify.com/playlist/..." \\
+  # one-liner (Spotify or YouTube playlist)
+  python -m src.main --playlist-url "https://open.spotify.com/playlist/..." \\
                      --email user@example.com --title "My Quiz" --description "Best songs"
 
   # load credentials from .env
@@ -66,8 +69,8 @@ examples:
   # headless browser (no visible window)
   python -m src.main --headless
 
-  # extract Spotify + YouTube links only (skip UwuFufu)
-  python -m src.main --spotify-only --spotify-url "https://open.spotify.com/playlist/..."
+  # extract playlist + YouTube links only (skip UwuFufu)
+  python -m src.main --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
 
   # resume UwuFufu step from a saved JSON file
   python -m src.main --resume output/spotify_to_youtube.json \\
@@ -79,7 +82,7 @@ examples:
     )
 
     # ── Input ───────────────────────────────────────────────────────────
-    parser.add_argument("--spotify-url", metavar="URL", help="Spotify playlist URL")
+    parser.add_argument("--playlist-url", metavar="URL", help="Spotify or YouTube playlist URL")
     parser.add_argument("--email", metavar="EMAIL", help="UwuFufu account email")
     parser.add_argument("--title", metavar="TEXT", help="Game title")
     parser.add_argument("--description", metavar="TEXT", help="Game description")
@@ -95,7 +98,7 @@ examples:
     parser.add_argument(
         "--spotify-only",
         action="store_true",
-        help="Only scrape Spotify and find YouTube links — skip UwuFufu automation",
+        help="Only fetch playlist and find YouTube links — skip UwuFufu automation",
     )
     parser.add_argument(
         "--resume",
@@ -147,16 +150,16 @@ def _resolve_credentials(args: argparse.Namespace) -> Optional[Credentials]:
     return Credentials(email=email, password=password)
 
 
-def _resolve_spotify_url(args: argparse.Namespace) -> str:
-    if args.spotify_url:
-        return args.spotify_url
+def _resolve_playlist_url(args: argparse.Namespace) -> str:
+    if args.playlist_url:
+        return args.playlist_url
 
     env = load_credentials_from_env() if args.use_env else None
-    if env and env.spotify_url:
-        print(f"Loaded Spotify URL from .env: {env.spotify_url}")
-        return env.spotify_url
+    if env and env.playlist_url:
+        print(f"Loaded playlist URL from .env: {env.playlist_url}")
+        return env.playlist_url
 
-    return input("Enter your Spotify playlist URL: ")
+    return input("Enter your Spotify or YouTube playlist URL: ")
 
 
 def _resolve_game_config(args: argparse.Namespace) -> GameConfig:
@@ -169,25 +172,30 @@ def _resolve_game_config(args: argparse.Namespace) -> GameConfig:
 # Pipeline steps
 # ─────────────────────────────────────────────
 
-def _step_spotify_and_youtube(
-    spotify_url: str, config: AppConfig, keep_open: bool = False
+def _step_extract_links(
+    playlist_url: str, config: AppConfig, api_creds: ApiCredentials, keep_open: bool = False
 ) -> list[YoutubeLink]:
-    """Scrape Spotify then search YouTube; return list of YoutubeLink."""
-    with managed_browser(
-        headless=config.headless, keep_open_on_error=keep_open
-    ) as (driver, _):
-        scraper = SpotifyScraper(driver, config)
-        tracks = scraper.get_tracks(spotify_url)
+    """Fetch tracks from a Spotify or YouTube playlist; return list of YoutubeLink."""
+    source = detect_source(playlist_url)
 
-    logger.info("✅ Extracted %d tracks", len(tracks))
+    if source == "spotify":
+        token_manager = SpotifyTokenManager(api_creds)
+        spotify_api = SpotifyAPI(token_manager)
+        tracks = spotify_api.get_tracks(playlist_url)
+        logger.info("Extracted %d tracks from Spotify playlist", len(tracks))
+        youtube_api = YouTubeAPI(api_creds)
+        youtube_links = youtube_api.search_all(tracks)
 
-    searcher = YouTubeSearcher(config)
-    youtube_links = searcher.search_all(tracks)
+    elif source == "youtube":
+        raise NotImplementedError(
+            "YouTube playlist support is coming in Task 3. "
+            "Use a Spotify playlist URL for now."
+        )
 
-    output_dir = config.output_dir
-    output_filename = config.output_filename
-    save_youtube_links(youtube_links, output_dir, output_filename)
+    else:
+        raise InvalidInputError(f"Unknown playlist source: {source}")
 
+    save_youtube_links(youtube_links, config.output_dir, config.output_filename)
     return youtube_links
 
 
@@ -272,7 +280,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         config.output_filename = p.stem
 
     print("=" * 50)
-    print("🎵 Spotify to UwuFufu Automation Tool 🎮")
+    try:
+        print("🎵 Playlist to UwuFufu Automation Tool 🎮")
+    except UnicodeEncodeError:
+        print("Playlist to UwuFufu Automation Tool")
     print("=" * 50)
 
     try:
@@ -287,16 +298,17 @@ def main(argv: Optional[list[str]] = None) -> int:
                 keep_open=args.keep_browser_open,
             )
 
-        # ── --spotify-only mode ────────────────────────────────────────
-        spotify_url = _resolve_spotify_url(args)
+        # ── Fetch playlist + YouTube links ─────────────────────────────
+        playlist_url = _resolve_playlist_url(args)
+        api_creds = load_api_credentials()
 
-        youtube_links = _step_spotify_and_youtube(
-            spotify_url, config, keep_open=args.keep_browser_open
+        youtube_links = _step_extract_links(
+            playlist_url, config, api_creds, keep_open=args.keep_browser_open
         )
 
         if args.spotify_only:
             valid = sum(1 for l in youtube_links if l.is_valid)
-            logger.info("Spotify-only mode complete. %d/%d links found.", valid, len(youtube_links))
+            logger.info("Extraction complete. %d/%d links found.", valid, len(youtube_links))
             return 0
 
         # ── Full pipeline ──────────────────────────────────────────────
@@ -307,6 +319,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             keep_open=args.keep_browser_open,
         )
 
+    except InvalidInputError as exc:
+        return _report_error("Invalid playlist URL", exc)
     except SpotifyError as exc:
         return _report_error("Spotify error", exc)
     except YouTubeError as exc:
