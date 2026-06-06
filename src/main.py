@@ -215,11 +215,11 @@ def _step_extract_links(
         spotify_api = SpotifyAPI(auth)
         tracks = spotify_api.get_tracks(playlist_url)
         logger.info("Extracted %d tracks from Spotify playlist", len(tracks))
-        youtube_api = YouTubeAPI(api_creds)
+        youtube_api = YouTubeAPI()
         youtube_links = youtube_api.search_all(tracks)
 
     elif source == "youtube":
-        youtube_api = YouTubeAPI(api_creds)
+        youtube_api = YouTubeAPI()
         youtube_links = youtube_api.get_playlist_tracks(playlist_url)
         logger.info("Extracted %d videos from YouTube playlist", len(youtube_links))
 
