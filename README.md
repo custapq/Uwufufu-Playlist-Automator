@@ -1,11 +1,12 @@
-# Spotify to UwuFufu Automation Tool (v3.0.0)
+# Playlist to UwuFufu Automation Tool (v3.0.0)
 
-A Python automation tool that extracts tracks from a public Spotify playlist, finds matching YouTube videos for each track, and automatically creates a UwuFufu quiz game with those videos.
+A Python automation tool that takes a **Spotify or YouTube playlist** link, resolves a YouTube video URL for every track, and automatically creates a UwuFufu quiz game with those videos. Just give it one playlist link — it detects the provider for you.
 
 ## Features
 
-- Fast and reliable Spotify playlist extraction via the **Spotify API**
-- Fast and accurate YouTube video search via the **YouTube Data API v3**
+- **Auto-detects** whether the playlist link is Spotify or YouTube
+- Fast and reliable Spotify playlist extraction via the **Spotify API**, then matches each track on the **YouTube Data API v3**
+- YouTube playlist support that takes each video's URL **directly** from the playlist (no extra search, lower quota usage)
 - Creates a UwuFufu game and adds all videos automatically via browser automation
 - Saves results to `output/spotify_to_youtube.json` — resume if anything fails
 - Supports `.env` file so you never have to type credentials twice
@@ -44,8 +45,8 @@ You MUST provide the API keys for Spotify and YouTube:
 UWUFUFU_EMAIL=your_email@example.com
 UWUFUFU_PASSWORD=your_password
 
-# --- Spotify Playlist ---
-SPOTIFY_PLAYLIST_URL=https://open.spotify.com/playlist/xxxxx
+# --- Playlist URL (Spotify or YouTube — the tool auto-detects) ---
+PLAYLIST_URL=https://open.spotify.com/playlist/xxxxx
 
 # --- Spotify API Credentials ---
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
@@ -70,8 +71,9 @@ The tool will prompt for each required value.
 ### One-liner
 
 ```bash
+# Works with a Spotify OR a YouTube playlist link — auto-detected
 python -m src.main \
-  --spotify-url "https://open.spotify.com/playlist/..." \
+  --playlist-url "https://open.spotify.com/playlist/..." \
   --email "user@example.com" \
   --title "My Music Quiz" \
   --description "Guess the song!"
@@ -89,12 +91,13 @@ python -m src.main --use-env --title "My Quiz" --description "Best songs"
 python -m src.main --headless
 ```
 
-### Spotify + YouTube only (skip UwuFufu)
+### Extract links only (skip UwuFufu)
 
-Useful for previewing results before creating a game:
+Useful for previewing results before creating a game. Accepts a Spotify or YouTube playlist:
 
 ```bash
-python -m src.main --spotify-only --spotify-url "https://open.spotify.com/playlist/..."
+python -m src.main --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
+python -m src.main --spotify-only --playlist-url "https://www.youtube.com/playlist?list=..."
 ```
 
 Output is saved to `output/spotify_to_youtube.json` and `.txt`.
@@ -113,7 +116,7 @@ python -m src.main --resume output/spotify_to_youtube.json \
 ### All flags
 
 ```
---spotify-url URL     Spotify playlist URL
+--playlist-url URL    Spotify or YouTube playlist URL (provider auto-detected)
 --email EMAIL         UwuFufu account email
 --title TEXT          Game title
 --description TEXT    Game description
@@ -144,6 +147,7 @@ Uwufufu-Automator/
 │       ├── browser.py           ← WebDriver factory + managed_browser context
 │       ├── logger.py            ← Logging setup (console + file)
 │       ├── retry.py             ← @retry decorator with exponential backoff
+│       ├── playlist.py          ← detect_source() — Spotify vs YouTube
 │       └── spotify_auth.py      ← Spotify Token Manager
 ├── tests/
 ├── .env.example
@@ -169,18 +173,20 @@ pytest --cov=src --cov-report=term-missing   # show uncovered lines
 ```
 
 All tests use mocks — no real network access or browser is required.
-Current coverage is ~67% (the frozen `auto_uwu_legacy.py` is excluded via `.coveragerc`).
+Current coverage is ~76% (the API modules sit at 98–100%).
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| Spotify playlist not loading | Make sure the playlist is set to **Public** |
+| Playlist not loading | Make sure the Spotify/YouTube playlist is set to **Public** |
+| `Unrecognised playlist URL` | The link isn't a Spotify or YouTube playlist — check `PLAYLIST_URL` / `--playlist-url` |
+| Spotify 403 / no tracks | Verify `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` in `.env` |
+| YouTube quota exceeded | The YouTube Data API has a daily quota — wait for reset or use a new `YOUTUBE_API_KEY` |
 | Login fails | Double-check email and password in `.env` or when prompted |
 | Videos not added | UwuFufu may have updated its UI — check `SelectorConfig` in `src/config.py` |
-| YouTube search returns nothing | YouTube HTML structure may have changed — check `_VIDEO_ID_RE` in `src/youtube_searcher.py` |
 | Browser crashes | Try adding `--headless` flag or updating ChromeDriver |
-| Partial failure mid-run | Use `--resume output/spotify_to_youtube.json` to continue without re-scraping |
+| Partial failure mid-run | Use `--resume output/spotify_to_youtube.json` to continue without re-fetching |
 | Need to inspect a failure | Add `--keep-browser-open` so Chrome stays open and pauses on error |
 
 Log files are written to `logs/automation_YYYYMMDD_HHMMSS.log` for debugging.
