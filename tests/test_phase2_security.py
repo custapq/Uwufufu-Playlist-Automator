@@ -2,17 +2,7 @@ import pytest
 from unittest.mock import patch
 from types import SimpleNamespace
 
-
-@pytest.fixture(autouse=True)
-def _no_dotenv_file():
-    """Stop load_dotenv() from reading a real .env on disk.
-
-    Without this, a developer's actual .env leaks into the patched os.environ and
-    makes the "no credentials" tests fail. Patching it to a no-op keeps the tests
-    dependent only on the os.environ each test sets up.
-    """
-    with patch("src.config.load_dotenv", return_value=False):
-        yield
+# Note: the _no_dotenv_file autouse fixture now lives in tests/conftest.py
 
 
 class TestLoadCredentialsFromEnv:
@@ -45,19 +35,19 @@ class TestLoadCredentialsFromEnv:
         assert result.email == "user@example.com"
         assert result.password == "secret123"
 
-    def test_spotify_url_included_when_present(self):
+    def test_playlist_url_included_when_present(self):
         env = {
             "UWUFUFU_EMAIL": "user@example.com",
             "UWUFUFU_PASSWORD": "secret123",
-            "SPOTIFY_PLAYLIST_URL": "https://open.spotify.com/playlist/abc123",
+            "PLAYLIST_URL": "https://open.spotify.com/playlist/abc123",
         }
         with patch.dict("os.environ", env, clear=True):
             from src.config import load_credentials_from_env
             result = load_credentials_from_env()
 
-        assert result.spotify_url == "https://open.spotify.com/playlist/abc123"
+        assert result.playlist_url == "https://open.spotify.com/playlist/abc123"
 
-    def test_spotify_url_is_none_when_absent(self):
+    def test_playlist_url_is_none_when_absent(self):
         env = {
             "UWUFUFU_EMAIL": "user@example.com",
             "UWUFUFU_PASSWORD": "secret123",
@@ -66,7 +56,7 @@ class TestLoadCredentialsFromEnv:
             from src.config import load_credentials_from_env
             result = load_credentials_from_env()
 
-        assert result.spotify_url is None
+        assert result.playlist_url is None
 
 
 class TestPasswordNotVisible:
