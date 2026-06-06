@@ -48,6 +48,14 @@ class YouTubeSearchError(YouTubeError):
     """
 
 
+class YouTubePlaylistError(YouTubeError):
+    """
+    Failed to fetch a YouTube playlist (e.g. playlist is private or ID is invalid).
+
+    Fix: make sure the playlist is set to Public and the URL is correct.
+    """
+
+
 # ─────────────────────────────────────────────
 # UwuFufu Automation
 # ─────────────────────────────────────────────
