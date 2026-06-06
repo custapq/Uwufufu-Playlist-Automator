@@ -25,7 +25,8 @@ from src.models import Credentials, GameConfig, UserInput, YoutubeLink, ApiCrede
 from src.spotify_api import SpotifyAPI
 from src.utils.browser import managed_browser
 from src.utils.logger import setup_logger
-from src.utils.spotify_auth import SpotifyTokenManager
+from src.utils.spotify_auth import SpotifyTokenManager  # noqa: F401 (kept for --resume compat)
+from src.utils.spotify_oauth import SpotifyUserAuth
 from src.uwufufu_automator import UwuFufuAutomator
 from src.youtube_api import YouTubeAPI
 
@@ -73,6 +74,12 @@ examples:
   # extract playlist + YouTube links only (skip UwuFufu)
   python -m src.main --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
 
+  # Spotify OAuth: log in via browser to read your OWN playlist (first time)
+  python -m src.main --spotify-login --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
+
+  # Spotify OAuth: subsequent runs reuse the cached token (no --spotify-login needed)
+  python -m src.main --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
+
   # resume UwuFufu step from a saved JSON file
   python -m src.main --resume output/spotify_to_youtube.json \\
                      --email user@example.com --title "My Quiz" --description "Best songs"
@@ -105,6 +112,16 @@ examples:
         "--resume",
         metavar="FILE",
         help="Skip Spotify + YouTube steps; load links from this JSON file",
+    )
+    parser.add_argument(
+        "--spotify-login",
+        action="store_true",
+        help=(
+            "Force a fresh Spotify browser login (Authorization Code flow). "
+            "Use this the first time, or to switch accounts. "
+            "After the first login the refresh token is cached and subsequent "
+            "runs do not need this flag."
+        ),
     )
 
     # ── Browser ─────────────────────────────────────────────────────────
@@ -174,14 +191,28 @@ def _resolve_game_config(args: argparse.Namespace) -> GameConfig:
 # ─────────────────────────────────────────────
 
 def _step_extract_links(
-    playlist_url: str, config: AppConfig, api_creds: ApiCredentials, keep_open: bool = False
+    playlist_url: str,
+    config: AppConfig,
+    api_creds: ApiCredentials,
+    keep_open: bool = False,
+    spotify_login: bool = False,
 ) -> list[YoutubeLink]:
-    """Fetch tracks from a Spotify or YouTube playlist; return list of YoutubeLink."""
+    """Fetch tracks from a Spotify or YouTube playlist; return list of YoutubeLink.
+
+    For Spotify sources, ``SpotifyUserAuth`` (Authorization Code flow) is always
+    used because Client Credentials cannot read playlist tracks after Spotify's
+    February 2026 API change.  The refresh token is cached on disk so the
+    interactive browser login only fires on the first run (or when
+    ``spotify_login=True`` is passed to force a fresh login).
+    """
     source = detect_source(playlist_url)
 
     if source == "spotify":
-        token_manager = SpotifyTokenManager(api_creds)
-        spotify_api = SpotifyAPI(token_manager)
+        auth = SpotifyUserAuth(api_creds)
+        if spotify_login:
+            logger.info("--spotify-login: starting fresh Spotify browser login…")
+            auth.login(force=True)
+        spotify_api = SpotifyAPI(auth)
         tracks = spotify_api.get_tracks(playlist_url)
         logger.info("Extracted %d tracks from Spotify playlist", len(tracks))
         youtube_api = YouTubeAPI(api_creds)
@@ -303,7 +334,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         api_creds = load_api_credentials()
 
         youtube_links = _step_extract_links(
-            playlist_url, config, api_creds, keep_open=args.keep_browser_open
+            playlist_url,
+            config,
+            api_creds,
+            keep_open=args.keep_browser_open,
+            spotify_login=args.spotify_login,
         )
 
         if args.spotify_only:

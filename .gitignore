@@ -1,6 +1,7 @@
 # === Sensitive / Credentials ===
 .env
 config.yaml
+.spotify_token.json
 
 # === Program Output ===
 output/
