@@ -14,6 +14,7 @@ from src.exceptions import (
     UwufufuError,
     VideoAddError,
     YouTubeError,
+    YouTubePlaylistError,
     YouTubeSearchError,
 )
 
@@ -31,6 +32,7 @@ class TestHierarchy:
 
     def test_youtube_subclasses(self):
         assert issubclass(YouTubeSearchError, YouTubeError)
+        assert issubclass(YouTubePlaylistError, YouTubeError)
 
     def test_automation_subclasses(self):
         for exc in (LoginError, NavigationError, GameCreationError,
@@ -46,6 +48,10 @@ class TestCatchability:
     def test_spotify_base_catches_subclass(self):
         with pytest.raises(SpotifyError):
             raise SpotifyPlaylistNotFoundError("private playlist")
+
+    def test_youtube_base_catches_playlist_error(self):
+        with pytest.raises(YouTubeError):
+            raise YouTubePlaylistError("private playlist")
 
     def test_specific_does_not_catch_sibling(self):
         with pytest.raises(LoginError):
