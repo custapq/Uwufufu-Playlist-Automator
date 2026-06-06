@@ -1,12 +1,12 @@
-# Spotify to UwuFufu Automation Tool
+# Spotify to UwuFufu Automation Tool (v3.0.0)
 
 A Python automation tool that extracts tracks from a public Spotify playlist, finds matching YouTube videos for each track, and automatically creates a UwuFufu quiz game with those videos.
 
 ## Features
 
-- Scrapes any public Spotify playlist (no API key required)
-- Searches YouTube for each track (no API key required)
-- Creates a UwuFufu game and adds all videos automatically
+- Fast and reliable Spotify playlist extraction via the **Spotify API**
+- Fast and accurate YouTube video search via the **YouTube Data API v3**
+- Creates a UwuFufu game and adds all videos automatically via browser automation
 - Saves results to `output/spotify_to_youtube.json` — resume if anything fails
 - Supports `.env` file so you never have to type credentials twice
 - Headless mode, verbose logging, and flexible CLI flags
@@ -31,14 +31,28 @@ For running tests:
 pip install -r requirements-dev.txt
 ```
 
-## Configuration (optional)
+## Configuration (required)
 
-Copy `.env.example` to `.env` and fill in your credentials so the tool loads them automatically:
+Copy `.env.example` to `.env` and fill in your credentials so the tool loads them automatically.
+You MUST provide the API keys for Spotify and YouTube:
+
+1. **Spotify**: Create an app on the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) to get a `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`.
+2. **YouTube**: Create a project on the [Google Cloud Console](https://console.cloud.google.com/), enable the **YouTube Data API v3**, and generate a `YOUTUBE_API_KEY`.
 
 ```ini
+# --- UwuFufu Credentials ---
 UWUFUFU_EMAIL=your_email@example.com
 UWUFUFU_PASSWORD=your_password
+
+# --- Spotify Playlist ---
 SPOTIFY_PLAYLIST_URL=https://open.spotify.com/playlist/xxxxx
+
+# --- Spotify API Credentials ---
+SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+
+# --- YouTube API Credentials ---
+YOUTUBE_API_KEY=your_youtube_api_key_here
 ```
 
 > `.env` is listed in `.gitignore` and will never be committed.
@@ -119,8 +133,8 @@ python -m src.main --resume output/spotify_to_youtube.json \
 Uwufufu-Automator/
 ├── src/
 │   ├── main.py                  ← Entry point + CLI
-│   ├── spotify_scraper.py       ← Spotify playlist scraping
-│   ├── youtube_searcher.py      ← YouTube video search
+│   ├── spotify_api.py           ← Spotify playlist extraction (REST API)
+│   ├── youtube_api.py           ← YouTube video search (REST API)
 │   ├── uwufufu_automator.py     ← UwuFufu browser automation
 │   ├── file_manager.py          ← Save / load JSON results
 │   ├── config.py                ← AppConfig, TimingConfig, SelectorConfig
@@ -129,7 +143,8 @@ Uwufufu-Automator/
 │   └── utils/
 │       ├── browser.py           ← WebDriver factory + managed_browser context
 │       ├── logger.py            ← Logging setup (console + file)
-│       └── retry.py             ← @retry decorator with exponential backoff
+│       ├── retry.py             ← @retry decorator with exponential backoff
+│       └── spotify_auth.py      ← Spotify Token Manager
 ├── tests/
 ├── .env.example
 ├── .gitignore

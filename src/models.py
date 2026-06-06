@@ -62,3 +62,12 @@ class UserInput:
     spotify_url: str
     credentials: Credentials
     game: GameConfig
+
+
+@dataclass
+class ApiCredentials:
+    """API Keys for Spotify and YouTube."""
+
+    spotify_client_id: str
+    spotify_client_secret: str
+    youtube_api_key: str
