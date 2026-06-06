@@ -232,6 +232,7 @@ def load_api_credentials() -> "ApiCredentials":
     spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
     spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
     youtube_api_key = os.getenv("YOUTUBE_API_KEY")
+    spotify_redirect_uri = os.getenv("SPOTIFY_REDIRECT_URI", "http://127.0.0.1:8888/callback")
 
     missing = []
     if not spotify_client_id: missing.append("SPOTIFY_CLIENT_ID")
@@ -247,4 +248,5 @@ def load_api_credentials() -> "ApiCredentials":
         spotify_client_id=spotify_client_id,
         spotify_client_secret=spotify_client_secret,
         youtube_api_key=youtube_api_key,
+        spotify_redirect_uri=spotify_redirect_uri,
     )
