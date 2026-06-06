@@ -72,19 +72,19 @@ class TestSearch:
 
 class TestSearchErrors:
     @patch("requests.Session.get")
-    def test_http_error_raises_youtube_search_error(self, mock_get):
-        # raise_for_status -> HTTPError is converted immediately (no retry)
+    def test_http_error_retries_then_raises_youtube_search_error(self, mock_get):
+        # HTTPError is a RequestException subclass -> retried 3x, then wrapped
         mock_get.return_value = make_response({}, status=500)
         with pytest.raises(YouTubeSearchError):
             _api().search(Track(name="X", artist="Y"))
-        assert mock_get.call_count == 1
+        assert mock_get.call_count == 3
 
     @patch("requests.Session.get")
-    def test_network_error_retries_then_raises(self, mock_get):
-        # session.get itself raising is outside the try/except, so the @retry
-        # decorator retries and ultimately re-raises the raw RequestException.
+    def test_network_error_retries_then_raises_youtube_search_error(self, mock_get):
+        # A connection error is retried 3x and wrapped as YouTubeSearchError so
+        # main()'s UwufufuError handler can catch it (no raw exception escapes).
         mock_get.side_effect = requests.ConnectionError("offline")
-        with pytest.raises(requests.RequestException):
+        with pytest.raises(YouTubeSearchError):
             _api().search(Track(name="X", artist="Y"))
         assert mock_get.call_count == 3
 

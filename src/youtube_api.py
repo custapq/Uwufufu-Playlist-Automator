@@ -115,27 +115,19 @@ class YouTubeAPI:
         logger.info("YouTube API search complete: %d/%d found", found, total)
         return results
 
-    @retry(max_attempts=3, delay=2.0, exceptions=(requests.RequestException,))
     def search(self, track: Track) -> YoutubeLink:
-        """Search YouTube for a single track and return a YoutubeLink."""
-        params = {
-            "part": "snippet",
-            "maxResults": 1,
-            "q": track.search_query,
-            "type": "video",
-            "key": self.api_key
-        }
+        """Search YouTube for a single track and return a YoutubeLink.
 
-        response = self._session.get(self._SEARCH_URL, params=params)
-        
+        Raises:
+            YouTubeSearchError: If the request keeps failing after retries
+                (network error or HTTP error response).
+        """
         try:
-            response.raise_for_status()
-            data = response.json()
-        except requests.HTTPError as exc:
-            logger.error(f"YouTube API returned an error: {exc.response.text if exc.response else str(exc)}")
-            raise YouTubeSearchError(f"YouTube API request failed: {exc}") from exc
+            data = self._search_request(track)
         except requests.RequestException as exc:
-            raise YouTubeSearchError(f"Network error while connecting to YouTube API: {exc}") from exc
+            text = getattr(getattr(exc, "response", None), "text", None)
+            logger.error("YouTube API search failed: %s", text or exc)
+            raise YouTubeSearchError(f"YouTube API request failed: {exc}") from exc
 
         items = data.get("items", [])
         if items:
@@ -147,3 +139,23 @@ class YouTubeAPI:
 
         logger.warning("No YouTube video found for: %s", track)
         return YoutubeLink(track=track, url=None)
+
+    @retry(max_attempts=3, delay=2.0, exceptions=(requests.RequestException,))
+    def _search_request(self, track: Track) -> dict:
+        """Perform the search HTTP request, retrying on any request error.
+
+        Both connection errors and HTTP error responses (``raise_for_status``)
+        are ``requests.RequestException`` subclasses, so the ``@retry`` decorator
+        retries them; the final failure propagates to :meth:`search` to be
+        wrapped as a ``YouTubeSearchError``.
+        """
+        params = {
+            "part": "snippet",
+            "maxResults": 1,
+            "q": track.search_query,
+            "type": "video",
+            "key": self.api_key,
+        }
+        response = self._session.get(self._SEARCH_URL, params=params)
+        response.raise_for_status()
+        return response.json()
