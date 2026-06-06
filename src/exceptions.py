@@ -32,6 +32,19 @@ class SpotifyScrapingError(SpotifyError):
     """
 
 
+class SpotifyPlaylistAccessError(SpotifyError):
+    """
+    Spotify returned the playlist's metadata but not its tracks.
+
+    Since Spotify's February 2026 API changes, playlist contents are only
+    returned for playlists the authenticated user owns or collaborates on.
+    Client Credentials (app-only) cannot read any playlist's tracks.
+
+    Fix: log in with ``--spotify-login`` and use a playlist you own, or use a
+    YouTube playlist instead.
+    """
+
+
 # ─────────────────────────────────────────────
 # YouTube
 # ─────────────────────────────────────────────

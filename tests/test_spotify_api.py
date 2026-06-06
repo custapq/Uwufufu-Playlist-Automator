@@ -3,7 +3,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from src.exceptions import SpotifyError, SpotifyPlaylistNotFoundError
+from src.exceptions import (
+    SpotifyError,
+    SpotifyPlaylistAccessError,
+    SpotifyPlaylistNotFoundError,
+)
 from src.spotify_api import SpotifyAPI
 
 from tests.conftest import make_response
@@ -16,6 +20,12 @@ def _api(token="tok"):
 
 
 def _item(name="Song", artists=("Artist",)):
+    """A /items entry using the current `item` field."""
+    return {"item": {"name": name, "artists": [{"name": a} for a in artists]}}
+
+
+def _legacy_item(name="Song", artists=("Artist",)):
+    """A /tracks entry using the deprecated `track` field (fallback path)."""
     return {"track": {"name": name, "artists": [{"name": a} for a in artists]}}
 
 
@@ -63,22 +73,30 @@ class TestGetTracksHappyPath:
         assert tracks[0].artist == "A, B, C"
 
     @patch("requests.Session.get")
-    def test_calls_correct_endpoint(self, mock_get):
-        # Guards against the old hardcoded-playlist-id bug
+    def test_calls_items_endpoint_with_playlist_id(self, mock_get):
+        # /items endpoint (Feb 2026) with the real id (guards old hardcoded-id bug)
         mock_get.return_value = make_response({"items": [_item()], "next": None})
         _api().get_tracks("https://open.spotify.com/playlist/MYID42")
 
         called_url = mock_get.call_args.args[0]
-        assert called_url == "https://api.spotify.com/v1/playlists/MYID42/tracks"
+        assert called_url == "https://api.spotify.com/v1/playlists/MYID42/items"
+
+    @patch("requests.Session.get")
+    def test_reads_legacy_track_field(self, mock_get):
+        # Fallback: still parse the deprecated `track` field if present
+        mock_get.return_value = make_response(
+            {"items": [_legacy_item("Old", ("Artist",))], "next": None}
+        )
+        tracks = _api().get_tracks("https://open.spotify.com/playlist/abc")
+        assert tracks[0].name == "Old"
 
     @patch("requests.Session.get")
     def test_first_request_sends_fields_and_market_and_limit(self, mock_get):
-        # Guards against the old fields bug (missing artists / next)
         mock_get.return_value = make_response({"items": [_item()], "next": None})
         _api().get_tracks("https://open.spotify.com/playlist/abc")
 
         params = mock_get.call_args.kwargs["params"]
-        assert "artists(name)" in params["fields"]
+        assert "item(name,artists(name))" in params["fields"]
         assert "next" in params["fields"]
         assert params["market"] == "ES"
         assert params["limit"] == 100
@@ -120,9 +138,9 @@ class TestGetTracksEdgeAndErrors:
             _api().get_tracks("https://open.spotify.com/track/not-a-playlist")
 
     @patch("requests.Session.get")
-    def test_skips_null_track_items(self, mock_get):
+    def test_skips_null_item_entries(self, mock_get):
         mock_get.return_value = make_response(
-            {"items": [{"track": None}, _item("Real")], "next": None}
+            {"items": [{"item": None}, _item("Real")], "next": None}
         )
         tracks = _api().get_tracks("https://open.spotify.com/playlist/abc")
         assert [t.name for t in tracks] == ["Real"]
@@ -130,7 +148,7 @@ class TestGetTracksEdgeAndErrors:
     @patch("requests.Session.get")
     def test_skips_track_missing_name(self, mock_get):
         mock_get.return_value = make_response(
-            {"items": [{"track": {"name": "", "artists": [{"name": "X"}]}}, _item("Real")],
+            {"items": [{"item": {"name": "", "artists": [{"name": "X"}]}}, _item("Real")],
              "next": None}
         )
         tracks = _api().get_tracks("https://open.spotify.com/playlist/abc")
@@ -139,22 +157,22 @@ class TestGetTracksEdgeAndErrors:
     @patch("requests.Session.get")
     def test_skips_track_missing_artist(self, mock_get):
         mock_get.return_value = make_response(
-            {"items": [{"track": {"name": "NoArtist", "artists": []}}, _item("Real")],
+            {"items": [{"item": {"name": "NoArtist", "artists": []}}, _item("Real")],
              "next": None}
         )
         tracks = _api().get_tracks("https://open.spotify.com/playlist/abc")
         assert [t.name for t in tracks] == ["Real"]
 
     @patch("requests.Session.get")
-    def test_empty_playlist_raises_spotify_error(self, mock_get):
+    def test_empty_playlist_raises_access_error(self, mock_get):
         mock_get.return_value = make_response({"items": [], "next": None})
-        with pytest.raises(SpotifyError):
+        with pytest.raises(SpotifyPlaylistAccessError):
             _api().get_tracks("https://open.spotify.com/playlist/abc")
 
     @patch("requests.Session.get")
-    def test_no_items_key_breaks_gracefully(self, mock_get):
+    def test_no_items_key_raises_access_error(self, mock_get):
         mock_get.return_value = make_response({"next": None})
-        with pytest.raises(SpotifyError):
+        with pytest.raises(SpotifyPlaylistAccessError):
             _api().get_tracks("https://open.spotify.com/playlist/abc")
 
 
@@ -172,9 +190,9 @@ class TestMakeRequestErrors:
             _api().get_tracks("https://open.spotify.com/playlist/abc")
 
     @patch("requests.Session.get")
-    def test_403_raises_spotify_error_with_body(self, mock_get):
-        mock_get.return_value = make_response({}, status=403, text="region locked")
-        with pytest.raises(SpotifyError, match="region locked"):
+    def test_403_raises_access_error_with_hint(self, mock_get):
+        mock_get.return_value = make_response({}, status=403, text="Forbidden")
+        with pytest.raises(SpotifyPlaylistAccessError, match="spotify-login"):
             _api().get_tracks("https://open.spotify.com/playlist/abc")
 
     @patch("requests.Session.get")

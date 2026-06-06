@@ -9,6 +9,7 @@ from src.exceptions import (
     LoginError,
     NavigationError,
     SpotifyError,
+    SpotifyPlaylistAccessError,
     SpotifyPlaylistNotFoundError,
     SpotifyScrapingError,
     UwufufuError,
@@ -29,6 +30,7 @@ class TestHierarchy:
     def test_spotify_subclasses(self):
         assert issubclass(SpotifyPlaylistNotFoundError, SpotifyError)
         assert issubclass(SpotifyScrapingError, SpotifyError)
+        assert issubclass(SpotifyPlaylistAccessError, SpotifyError)
 
     def test_youtube_subclasses(self):
         assert issubclass(YouTubeSearchError, YouTubeError)
