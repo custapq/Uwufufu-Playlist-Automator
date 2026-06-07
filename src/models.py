@@ -45,6 +45,14 @@ class GameConfig:
 
     title: str
     description: str
+    category_id: int = 16
+    """uwufufu category id. 16 = Music (default)."""
+    start_time: int = 0
+    """Clip start in seconds applied to every video selection."""
+    end_time: int = 0
+    """Clip end in seconds (0 = full video)."""
+    publish: bool = True
+    """Set to False to leave the game as a draft after all videos are added."""
 
 
 @dataclass

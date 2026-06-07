@@ -9,25 +9,23 @@ from typing import Optional
 
 from src.config import AppConfig, load_config, load_credentials_from_env, load_api_credentials
 from src.exceptions import (
-    AutomationError,
     GameCreationError,
     InvalidInputError,
     LoginError,
-    NavigationError,
     SpotifyError,
     UwufufuError,
+    VideoAddError,
     YouTubeError,
     YouTubePlaylistError,
 )
 from src.utils.playlist import detect_source
 from src.file_manager import load_youtube_links, mark_video_added, save_youtube_links
-from src.models import Credentials, GameConfig, UserInput, YoutubeLink, ApiCredentials
+from src.models import Credentials, GameConfig, YoutubeLink, ApiCredentials
 from src.spotify_api import SpotifyAPI
-from src.utils.browser import managed_browser
 from src.utils.logger import setup_logger
 from src.utils.spotify_auth import SpotifyTokenManager  # noqa: F401 (kept for --resume compat)
 from src.utils.spotify_oauth import SpotifyUserAuth
-from src.uwufufu_automator import UwuFufuAutomator
+from src.uwufufu_api import UwufufuAPIClient
 from src.youtube_api import YouTubeAPI
 
 logger = logging.getLogger(__name__)
@@ -68,9 +66,6 @@ examples:
   # load credentials from .env
   python -m src.main --use-env --title "My Quiz" --description "Best songs"
 
-  # headless browser (no visible window)
-  python -m src.main --headless
-
   # extract playlist + YouTube links only (skip UwuFufu)
   python -m src.main --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
 
@@ -83,6 +78,12 @@ examples:
   # resume UwuFufu step from a saved JSON file
   python -m src.main --resume output/spotify_to_youtube.json \\
                      --email user@example.com --title "My Quiz" --description "Best songs"
+
+  # set category and leave as draft (don't publish)
+  python -m src.main --use-env --title "My Quiz" --description "..." --category-id 19 --no-publish
+
+  # clip every video to the first 30 seconds
+  python -m src.main --use-env --title "My Quiz" --description "..." --end-time 30
 
   # verbose / debug logging
   python -m src.main -v
@@ -124,16 +125,32 @@ examples:
         ),
     )
 
-    # ── Browser ─────────────────────────────────────────────────────────
+    # ── Game options ─────────────────────────────────────────────────────
     parser.add_argument(
-        "--headless",
-        action="store_true",
-        help="Run browser without a visible window",
+        "--category-id",
+        metavar="N",
+        type=int,
+        default=16,
+        help="UwuFufu category id for the game (default: 16 = Music)",
     )
     parser.add_argument(
-        "--keep-browser-open",
+        "--start-time",
+        metavar="SECS",
+        type=int,
+        default=0,
+        help="Clip start in seconds applied to every video (default: 0)",
+    )
+    parser.add_argument(
+        "--end-time",
+        metavar="SECS",
+        type=int,
+        default=0,
+        help="Clip end in seconds (default: 0 = full video)",
+    )
+    parser.add_argument(
+        "--no-publish",
         action="store_true",
-        help="On error, leave the browser open and pause (for debugging)",
+        help="Leave the game as a draft instead of publishing when done",
     )
 
     # ── Config / output ─────────────────────────────────────────────────
@@ -183,7 +200,14 @@ def _resolve_playlist_url(args: argparse.Namespace) -> str:
 def _resolve_game_config(args: argparse.Namespace) -> GameConfig:
     title = args.title or input("Enter your game title: ")
     description = args.description or input("Enter your game description: ")
-    return GameConfig(title=title, description=description)
+    return GameConfig(
+        title=title,
+        description=description,
+        category_id=args.category_id,
+        start_time=args.start_time,
+        end_time=args.end_time,
+        publish=not args.no_publish,
+    )
 
 
 # ─────────────────────────────────────────────
@@ -236,12 +260,11 @@ def _step_uwufufu(
     game: GameConfig,
     config: AppConfig,
     json_path: str,
-    keep_open: bool = False,
 ) -> int:
-    """Run the UwuFufu automation step.
+    """Import YouTube links into a new UwuFufu worldcup via the REST API.
 
-    Skips links already marked added_to_uwufufu (resume) and persists progress
-    to ``json_path`` after each successful video add.
+    Skips links already marked ``added_to_uwufufu`` (resume) and persists
+    progress to ``json_path`` after each successful video add.
     """
     valid_links = [link for link in youtube_links if link.is_valid]
     if not valid_links:
@@ -261,26 +284,42 @@ def _step_uwufufu(
         logger.info("🎉 All videos were already added — nothing to do")
         return 0
 
-    proceed = input("\nReady to proceed with UwuFufu automation? (y/n): ").lower()
+    proceed = input("\nReady to proceed with UwuFufu API import? (y/n): ").lower()
     if proceed != "y":
-        print("Automation cancelled. YouTube links saved to output/")
+        print("Import cancelled. YouTube links saved to output/")
         return 0
 
-    def _persist(link: YoutubeLink) -> None:
-        mark_video_added(json_path, link.track.name, link.track.artist)
+    client = UwufufuAPIClient()
+    client.login(credentials.email, credentials.password)
 
-    with managed_browser(
-        headless=config.headless, keep_open_on_error=keep_open
-    ) as (driver, _):
-        automator = UwuFufuAutomator(driver, config)
-        automator.login(credentials)
-        automator.navigate_to_create_game()
-        automator.fill_game_details(game)
-        automator.open_choices_panel()
-        automator.reveal_video_input()
-        success, total = automator.add_all_videos(pending, on_added=_persist)
-        logger.info("🎉 Added %d/%d videos to UwuFufu", success, total)
-        input("\nPress Enter to close the browser...")
+    def _on_progress(event: str, index: int, total: int) -> None:
+        link = pending[index]
+        if event == "added":
+            mark_video_added(json_path, link.track.name, link.track.artist)
+            logger.info("[%d/%d] Added: %s", index + 1, total, link.title)
+        elif event == "error":
+            logger.warning("[%d/%d] Failed: %s", index + 1, total, link.title)
+
+    result = client.import_tracks(
+        pending,
+        create={
+            "title": game.title,
+            "description": game.description,
+            "category_id": game.category_id,
+        },
+        start_time=game.start_time,
+        end_time=game.end_time,
+        on_progress=_on_progress,
+    )
+
+    logger.info("🎉 Added %d/%d videos (skipped %d, failed %d)",
+                result.added, len(pending), result.skipped, result.failed)
+
+    if game.publish and result.game_id:
+        client.publish_game(result.game_id, category_id=game.category_id)
+        logger.info("Game published — id=%d slug=%s", result.game_id, result.slug)
+    elif not game.publish:
+        logger.info("Game saved as draft — id=%d", result.game_id)
 
     return 0
 
@@ -302,9 +341,6 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     config = load_config(args.config)
 
-    # Override config with CLI flags
-    if args.headless:
-        config.headless = True
     if args.output:
         p = Path(args.output)
         config.output_dir = str(p.parent)
@@ -326,7 +362,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             game = _resolve_game_config(args)
             return _step_uwufufu(
                 youtube_links, credentials, game, config, args.resume,
-                keep_open=args.keep_browser_open,
             )
 
         # ── Fetch playlist + YouTube links ─────────────────────────────
@@ -337,7 +372,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             playlist_url,
             config,
             api_creds,
-            keep_open=args.keep_browser_open,
             spotify_login=args.spotify_login,
         )
 
@@ -351,7 +385,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         game = _resolve_game_config(args)
         return _step_uwufufu(
             youtube_links, credentials, game, config, str(config.output_json),
-            keep_open=args.keep_browser_open,
         )
 
     except InvalidInputError as exc:
@@ -364,10 +397,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         return _report_error("YouTube error", exc)
     except LoginError as exc:
         return _report_error("Login failed", exc)
-    except (NavigationError, GameCreationError) as exc:
+    except GameCreationError as exc:
         return _report_error("Game creation failed", exc)
-    except AutomationError as exc:
-        return _report_error("Automation error", exc)
+    except VideoAddError as exc:
+        return _report_error("Video add error", exc)
     except UwufufuError as exc:
         return _report_error("Unexpected error", exc)
 

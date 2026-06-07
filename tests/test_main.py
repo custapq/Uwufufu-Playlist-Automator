@@ -13,8 +13,10 @@ from src.models import ApiCredentials, Credentials, GameConfig, Track, YoutubeLi
 def _args(**overrides):
     defaults = dict(
         playlist_url=None, email=None, title=None, description=None,
-        use_env=False, spotify_only=False, resume=None, headless=False,
-        keep_browser_open=False, config=None, output=None, verbose=False,
+        use_env=False, spotify_only=False, resume=None,
+        config=None, output=None, verbose=False,
+        category_id=16, start_time=0, end_time=0, no_publish=False,
+        spotify_login=False,
     )
     defaults.update(overrides)
     return argparse.Namespace(**defaults)
@@ -35,8 +37,7 @@ class TestParser:
 
     def test_parses_flags(self):
         parser = main._build_parser()
-        ns = parser.parse_args(["--headless", "--spotify-only", "-v"])
-        assert ns.headless is True
+        ns = parser.parse_args(["--spotify-only", "-v"])
         assert ns.spotify_only is True
         assert ns.verbose is True
 
@@ -44,6 +45,30 @@ class TestParser:
         parser = main._build_parser()
         ns = parser.parse_args(["--playlist-url", "https://x/playlist/1"])
         assert ns.playlist_url == "https://x/playlist/1"
+
+    def test_parses_category_id(self):
+        parser = main._build_parser()
+        ns = parser.parse_args(["--category-id", "19"])
+        assert ns.category_id == 19
+
+    def test_parses_clip_times(self):
+        parser = main._build_parser()
+        ns = parser.parse_args(["--start-time", "10", "--end-time", "60"])
+        assert ns.start_time == 10
+        assert ns.end_time == 60
+
+    def test_parses_no_publish(self):
+        parser = main._build_parser()
+        ns = parser.parse_args(["--no-publish"])
+        assert ns.no_publish is True
+
+    def test_defaults(self):
+        parser = main._build_parser()
+        ns = parser.parse_args([])
+        assert ns.category_id == 16
+        assert ns.start_time == 0
+        assert ns.end_time == 0
+        assert ns.no_publish is False
 
 
 class TestResolveCredentials:
@@ -83,8 +108,15 @@ class TestResolvePlaylistUrl:
 
 class TestResolveGameConfig:
     def test_uses_args(self):
+        game = main._resolve_game_config(
+            _args(title="T", description="D", category_id=19, start_time=5, end_time=30, no_publish=True)
+        )
+        assert game == GameConfig(title="T", description="D", category_id=19, start_time=5, end_time=30, publish=False)
+
+    def test_defaults_category_and_publish(self):
         game = main._resolve_game_config(_args(title="T", description="D"))
-        assert game == GameConfig(title="T", description="D")
+        assert game.category_id == 16
+        assert game.publish is True
 
     def test_prompts_when_missing(self):
         with patch("builtins.input", side_effect=["MyTitle", "MyDesc"]):
@@ -98,8 +130,6 @@ class TestReportError:
 
 
 class TestStepExtractLinks:
-    """Task 5.2 — routing by detected source (requirement 3 integration)."""
-
     @patch("src.main.save_youtube_links")
     @patch("src.main.YouTubeAPI")
     @patch("src.main.SpotifyTokenManager")
@@ -163,9 +193,93 @@ class TestStepExtractLinks:
             main._step_extract_links("ftp://nope", AppConfig(), _api_creds())
 
 
-class TestMainExceptionHandling:
-    """Task 5.3 — main() maps domain errors to exit code 1."""
+class TestStepUwufufu:
+    def _link(self, url="https://youtu.be/x", added=False):
+        return YoutubeLink(track=Track("T", "A"), url=url, added=added)
 
+    def _game(self, **kw):
+        defaults = dict(title="Q", description="D", category_id=16,
+                        start_time=0, end_time=0, publish=True)
+        defaults.update(kw)
+        return GameConfig(**defaults)
+
+    def _creds(self):
+        return Credentials(email="a@b.com", password="pw")
+
+    @patch("src.main.mark_video_added")
+    @patch("src.main.UwufufuAPIClient")
+    @patch("builtins.input", return_value="y")
+    def test_calls_login_create_import_publish(self, _inp, mock_cls, _mark):
+        mock_client = mock_cls.return_value
+        mock_client.import_tracks.return_value = MagicMock(
+            game_id=42, slug="quiz", added=1, skipped=0, failed=0
+        )
+
+        result = main._step_uwufufu(
+            [self._link()], self._creds(), self._game(), AppConfig(), "out.json"
+        )
+
+        assert result == 0
+        mock_client.login.assert_called_once_with("a@b.com", "pw")
+        mock_client.import_tracks.assert_called_once()
+        mock_client.publish_game.assert_called_once_with(42, category_id=16)
+
+    @patch("src.main.UwufufuAPIClient")
+    @patch("builtins.input", return_value="y")
+    def test_no_publish_skips_publish_call(self, _inp, mock_cls):
+        mock_client = mock_cls.return_value
+        mock_client.import_tracks.return_value = MagicMock(
+            game_id=7, slug=None, added=1, skipped=0, failed=0
+        )
+
+        main._step_uwufufu(
+            [self._link()], self._creds(), self._game(publish=False), AppConfig(), "out.json"
+        )
+
+        mock_client.publish_game.assert_not_called()
+
+    @patch("builtins.input", return_value="n")
+    def test_cancel_returns_zero(self, _inp):
+        result = main._step_uwufufu(
+            [self._link()], self._creds(), self._game(), AppConfig(), "out.json"
+        )
+        assert result == 0
+
+    def test_no_valid_links_returns_one(self):
+        bad = YoutubeLink(track=Track("T", "A"), url=None)
+        result = main._step_uwufufu(
+            [bad], self._creds(), self._game(), AppConfig(), "out.json"
+        )
+        assert result == 1
+
+    @patch("builtins.input", return_value="y")
+    def test_all_already_added_returns_zero(self, _inp):
+        link = self._link(added=True)
+        result = main._step_uwufufu(
+            [link], self._creds(), self._game(), AppConfig(), "out.json"
+        )
+        assert result == 0
+
+    @patch("src.main.mark_video_added")
+    @patch("src.main.UwufufuAPIClient")
+    @patch("builtins.input", return_value="y")
+    def test_passes_category_and_clip_times(self, _inp, mock_cls, _mark):
+        mock_client = mock_cls.return_value
+        mock_client.import_tracks.return_value = MagicMock(
+            game_id=1, slug=None, added=1, skipped=0, failed=0
+        )
+        game = self._game(category_id=19, start_time=5, end_time=30)
+
+        main._step_uwufufu([self._link()], self._creds(), game, AppConfig(), "out.json")
+
+        _, kwargs = mock_client.import_tracks.call_args
+        assert kwargs["start_time"] == 5
+        assert kwargs["end_time"] == 30
+        assert kwargs["create"]["category_id"] == 19
+        mock_client.publish_game.assert_called_once_with(1, category_id=19)
+
+
+class TestMainExceptionHandling:
     def _run_with_extract_error(self, exc):
         argv = ["--playlist-url", "https://open.spotify.com/playlist/x", "--spotify-only"]
         with patch("src.main.load_api_credentials", return_value=_api_creds()), \
