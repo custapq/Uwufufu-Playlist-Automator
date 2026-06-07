@@ -15,7 +15,9 @@ def make_response(json_data=None, *, status: int = 200, text: str = "") -> Magic
     """
     resp = MagicMock(spec=requests.Response)
     resp.status_code = status
-    resp.text = text
+    resp.ok = status < 400
+    resp.headers = {}
+    resp.text = text if text else (str(json_data) if json_data is not None else "")
     resp.json.return_value = json_data if json_data is not None else {}
 
     def _raise_for_status():
