@@ -221,7 +221,9 @@ class TestStepUwufufu:
         assert result == 0
         mock_client.login.assert_called_once_with("a@b.com", "pw")
         mock_client.import_tracks.assert_called_once()
-        mock_client.publish_game.assert_called_once_with(42, category_id=16)
+        mock_client.publish_game.assert_called_once_with(
+            42, title="Q", description="D", category_id=16
+        )
 
     @patch("src.main.UwufufuAPIClient")
     @patch("builtins.input", return_value="y")
@@ -275,7 +277,9 @@ class TestStepUwufufu:
         assert kwargs["start_time"] == 5
         assert kwargs["end_time"] == 30
         assert kwargs["create"]["category_id"] == 19
-        mock_client.publish_game.assert_called_once_with(1, category_id=19)
+        mock_client.publish_game.assert_called_once_with(
+            1, title="Q", description="D", category_id=19
+        )
 
 
 class TestMainExceptionHandling:
