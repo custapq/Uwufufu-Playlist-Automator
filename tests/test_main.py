@@ -16,7 +16,7 @@ def _args(**overrides):
         use_env=False, spotify_only=False, resume=None,
         config=None, output=None, verbose=False,
         category_id=16, start_time=0, end_time=0, no_publish=False,
-        spotify_login=False,
+        spotify_login=False, locale="en", is_nsfw=False,
     )
     defaults.update(overrides)
     return argparse.Namespace(**defaults)
@@ -108,9 +108,9 @@ class TestResolvePlaylistUrl:
 class TestResolveGameConfig:
     def test_uses_args(self):
         game = main._resolve_game_config(
-            _args(title="T", description="D", category_id=19, start_time=5, end_time=30, no_publish=True)
+            _args(title="T", description="D", category_id=19, start_time=5, end_time=30, no_publish=True, locale="th", is_nsfw=True)
         )
-        assert game == GameConfig(title="T", description="D", category_id=19, start_time=5, end_time=30, publish=False)
+        assert game == GameConfig(title="T", description="D", category_id=19, start_time=5, end_time=30, publish=False, locale="th", is_nsfw=True)
 
     def test_defaults_category_and_publish(self):
         game = main._resolve_game_config(_args(title="T", description="D"))
@@ -198,7 +198,7 @@ class TestStepUwufufu:
 
     def _game(self, **kw):
         defaults = dict(title="Q", description="D", category_id=16,
-                        start_time=0, end_time=0, publish=True)
+                        start_time=0, end_time=0, publish=True, locale="en", is_nsfw=False)
         defaults.update(kw)
         return GameConfig(**defaults)
 
@@ -222,7 +222,7 @@ class TestStepUwufufu:
         mock_client.login.assert_called_once_with("a@b.com", "pw")
         mock_client.import_tracks.assert_called_once()
         mock_client.publish_game.assert_called_once_with(
-            42, title="Q", description="D", category_id=16
+            42, title="Q", description="D", category_id=16, is_nsfw=False, locale="en"
         )
 
     @patch("src.main.UwufufuAPIClient")
@@ -278,7 +278,7 @@ class TestStepUwufufu:
         assert kwargs["end_time"] == 30
         assert kwargs["create"]["category_id"] == 19
         mock_client.publish_game.assert_called_once_with(
-            1, title="Q", description="D", category_id=19
+            1, title="Q", description="D", category_id=19, is_nsfw=False, locale="en"
         )
 
 
