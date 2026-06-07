@@ -26,7 +26,6 @@ def _api_creds():
     return ApiCredentials(
         spotify_client_id="id",
         spotify_client_secret="secret",
-        youtube_api_key="yt_key",
     )
 
 

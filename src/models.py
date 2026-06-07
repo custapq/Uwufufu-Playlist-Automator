@@ -74,9 +74,8 @@ class UserInput:
 
 @dataclass
 class ApiCredentials:
-    """API Keys for Spotify and YouTube."""
+    """API credentials for Spotify (YouTube uses yt-dlp, no key needed)."""
 
     spotify_client_id: str
     spotify_client_secret: str
-    youtube_api_key: str
     spotify_redirect_uri: str = "http://127.0.0.1:8888/callback"
