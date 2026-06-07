@@ -53,6 +53,10 @@ class GameConfig:
     """Clip end in seconds (0 = full video)."""
     publish: bool = True
     """Set to False to leave the game as a draft after all videos are added."""
+    locale: str = "en"
+    """Language locale for the game (e.g. en, th, ko)."""
+    is_nsfw: bool = False
+    """Set to True if the game contains NSFW content."""
 
 
 @dataclass

@@ -65,88 +65,92 @@ Due to [Spotify API changes in February 2026](https://developer.spotify.com/docu
 
 ## Usage
 
-### Interactive mode (simplest)
+## 🎮 การสร้าง Quiz Game (Usage & Game Options)
 
+คุณสามารถสร้างเกมทายใจ (Quiz Game) แบบอัตโนมัติบน UwuFufu ได้ง่ายๆ โดยสามารถตั้งค่าตัวเลือกต่างๆ ของเกมได้ตามต้องการผ่านทาง Command Line Arguments ดังนี้
+
+### 1. วิธีที่แนะนำในการรัน (Recommended Way)
+
+วิธีที่สะดวกที่สุดคือการใช้ไฟล์ `.env` สำหรับเก็บรหัสผ่าน และใช้คำสั่งแบบบรรทัดเดียว (One-liner) เพื่อระบุรายละเอียดของเกมทั้งหมด:
+
+```bash
+python -m src.main --use-env \
+  --playlist-url "https://www.youtube.com/playlist?list=..." \
+  --title "Guess The Anime Opening" \
+  --description "สุดยอดควิซทายเพลงอนิเมะฮิต" \
+  --category-id 16 \
+  --locale "th"
+```
+
+### 2. ตัวเลือกที่สามารถปรับแต่งได้ (Adjustable Options)
+
+คุณสามารถปรับแต่งหน้าตาและสถานะของเกมได้ผ่าน Parameter เหล่านี้:
+
+*   **`--title` (ชื่อเกม)**
+    *   **ตัวอย่าง:** `--title "My Awesome Quiz"`
+    *   **คำอธิบาย:** ชื่อของ Worldcup หรือ Quiz ที่จะไปปรากฏบนหน้าเว็บ
+*   **`--description` (รายละเอียดเกม)**
+    *   **ตัวอย่าง:** `--description "มาทายกันว่าเพลงนี้คือเพลงอะไร"`
+    *   **คำอธิบาย:** คำอธิบายรายละเอียดกติกาหรือข้อมูลเกี่ยวกับตัวเกม
+*   **`--locale` (ภาษา)**
+    *   **ตัวอย่าง:** `--locale "th"`, `--locale "en"`, `--locale "ko"`
+    *   **คำอธิบาย:** กำหนดภาษาหลักของตัวเกม (ค่าเริ่มต้นคือ `en`)
+*   **`--category-id` (หมวดหมู่ของเกม)**
+    *   **ตัวอย่าง:** `--category-id 16`
+    *   **คำอธิบาย:** รหัสหมวดหมู่ของ UwuFufu (เช่น 16 = Music) สามารถหาเลข Category อื่นๆ ได้จาก API GET `/v1/categories` ของ UwuFufu (ค่าเริ่มต้นคือ 16)
+*   **`--is-nsfw` (เนื้อหาผู้ใหญ่)**
+    *   **ตัวอย่าง:** `--is-nsfw`
+    *   **คำอธิบาย:** ใส่ Flag นี้เพื่อระบุว่าเกมของคุณมีเนื้อหาล่อแหลม หรือเหมาะสำหรับผู้ใหญ่เท่านั้น
+*   **Visibility (สถานะการมองเห็น)**
+    *   **ตัวอย่าง:** `--no-publish`
+    *   **คำอธิบาย:** โดยปกติระบบจะตั้งสถานะเกมเป็น **Public (สาธารณะ)** โดยอัตโนมัติเมื่อเพิ่มวิดีโอเสร็จสิ้น แต่หากคุณต้องการให้เกมถูกบันทึกเป็นแค่ **Draft (ฉบับร่าง/ซ่อนไว้)** ให้ใส่คำสั่ง `--no-publish` เข้าไปด้วย
+*   **Clip Times (การตั้งเวลาเล่นวิดีโอ)**
+    *   **ตัวอย่าง:** `--start-time 30 --end-time 60`
+    *   **คำอธิบาย:** กำหนดให้วิดีโอทุกตัวในเกมเริ่มเล่นที่วินาทีใด (`start-time`) และหยุดที่วินาทีใด (`end-time`) หากไม่ได้ใส่ระบบจะเล่นวิดีโอแบบเต็มเพลงตั้งแต่ต้น
+
+---
+
+### โหมดการใช้งานอื่นๆ (Other Modes)
+
+**โหมดตอบคำถาม (Interactive Mode)**
+หากคุณไม่ได้ใส่ Parameter ข้างต้น โปรแกรมจะโต้ตอบและถามคุณทีละขั้นตอน:
 ```bash
 python -m src.main
 ```
 
-The tool will prompt for each required value.
-
-### One-liner
-
+**ดึงข้อมูลอย่างเดียว ไม่สร้างเกมบน UwuFufu (Spotify / YouTube -> JSON)**
+หากต้องการสกัดเฉพาะลิงก์ YouTube ออกมาใส่ไฟล์ `.json` โดยไม่ต้องอัปโหลดขึ้นเว็บ:
 ```bash
-python -m src.main \
-  --playlist-url "https://open.spotify.com/playlist/..." \
-  --email "user@example.com" \
-  --title "My Music Quiz" \
-  --description "Guess the song!"
+python -m src.main --spotify-only --playlist-url "https://..."
 ```
+> **หมายเหตุ:** สำหรับ Spotify ในการใช้งานครั้งแรกให้ใส่ `--spotify-login` เพิ่มเข้าไป เพื่อทำการล็อกอินผ่าน Browser
 
-### Load credentials from `.env`
-
+**ทำต่อจากที่ค้างไว้ (Resume)**
+หากโปรแกรมหยุดทำงานกลางคัน คุณสามารถนำไฟล์ `.json` จากโฟลเดอร์ `output/` มารันต่อได้เลยโดยไม่ต้องไปดึงลิงก์ใหม่จาก Playlist:
 ```bash
-python -m src.main --use-env --title "My Quiz" --description "Best songs"
+python -m src.main --resume output/spotify_to_youtube.json --use-env --title "My Quiz" --description "..."
 ```
 
-### Set game category and clip times
+### สรุปคำสั่ง (All Flags)
 
-```bash
-# Category 16 = Music (default). Find others with GET /v1/categories on the API.
-python -m src.main --use-env --title "My Quiz" --description "..." \
-  --category-id 16 \
-  --start-time 0 \
-  --end-time 30
-```
-
-### Save as draft (don't publish)
-
-```bash
-python -m src.main --use-env --title "My Quiz" --description "..." --no-publish
-```
-
-### Extract links only (skip UwuFufu)
-
-```bash
-# First time using Spotify (opens browser to log in)
-python -m src.main --spotify-login --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
-
-# Subsequent runs (uses cached token)
-python -m src.main --spotify-only --playlist-url "https://open.spotify.com/playlist/..."
-
-# YouTube playlists work immediately (no login required)
-python -m src.main --spotify-only --playlist-url "https://www.youtube.com/playlist?list=..."
-```
-
-### Resume after a failure
-
-If the import step fails partway through, skip the Spotify + YouTube steps and go straight to the API import:
-
-```bash
-python -m src.main --resume output/spotify_to_youtube.json \
-  --email "user@example.com" \
-  --title "My Quiz" \
-  --description "Best songs"
-```
-
-### All flags
-
-```
---playlist-url URL    Spotify or YouTube playlist URL (provider auto-detected)
---email EMAIL         UwuFufu account email
---title TEXT          Game title
---description TEXT    Game description
---use-env             Load credentials from .env
---spotify-only        Stop after saving YouTube links (skip UwuFufu)
---spotify-login       Force a fresh Spotify browser login (Authorization Code flow)
---resume FILE         Load YouTube links from JSON and skip to UwuFufu step
---category-id N       UwuFufu category id (default: 16 = Music)
---start-time SECS     Clip start in seconds for every video (default: 0)
---end-time SECS       Clip end in seconds — 0 means full video (default: 0)
---no-publish          Leave the game as a draft instead of publishing
---config FILE         Path to a custom config.yaml
---output FILE         Output base path (without extension)
--v / --verbose        Enable debug logging
+```text
+--playlist-url URL    ลิงก์ของ Spotify หรือ YouTube Playlist
+--email EMAIL         อีเมลของ UwuFufu
+--title TEXT          ชื่อเกม
+--description TEXT    คำอธิบายเกม
+--locale LANG         ภาษาของเกม เช่น en, th (ค่าเริ่มต้น: en)
+--category-id N       รหัสหมวดหมู่ (ค่าเริ่มต้น: 16)
+--is-nsfw             ติ๊กตั้งค่าว่าเป็นเนื้อหา NSFW
+--no-publish          บันทึกเกมเป็น Draft แทนการ Publish สู่สาธารณะ
+--start-time SECS     เวลาเริ่มต้นวิดีโอ (วินาที)
+--end-time SECS       เวลาสิ้นสุดวิดีโอ (วินาที)
+--use-env             โหลดอีเมล/รหัสผ่าน และ Client ID จากไฟล์ .env
+--spotify-only        ข้ามขั้นตอน UwuFufu ไปเลย (สกัดลิงก์อย่างเดียว)
+--spotify-login       บังคับล็อกอินเข้า Spotify ผ่านหน้าเว็บใหม่
+--resume FILE         โหลดลิงก์ YouTube จากไฟล์ JSON เพื่อทำต่อ
+--config FILE         ระบุที่อยู่ของไฟล์ config.yaml
+--output FILE         ระบุ path และชื่อไฟล์ผลลัพธ์ที่จะเซฟ (ไม่ต้องใส่นามสกุล)
+-v / --verbose        เปิดระบบ Debug Logging
 ```
 
 ## Project Structure

@@ -152,6 +152,17 @@ examples:
         action="store_true",
         help="Leave the game as a draft instead of publishing when done",
     )
+    parser.add_argument(
+        "--locale",
+        metavar="LANG",
+        default="en",
+        help="Language locale for the game, e.g. en, th, ko (default: en)",
+    )
+    parser.add_argument(
+        "--is-nsfw",
+        action="store_true",
+        help="Mark the game as containing NSFW content",
+    )
 
     # ── Config / output ─────────────────────────────────────────────────
     parser.add_argument("--config", metavar="FILE", help="Path to config.yaml")
@@ -207,6 +218,8 @@ def _resolve_game_config(args: argparse.Namespace) -> GameConfig:
         start_time=args.start_time,
         end_time=args.end_time,
         publish=not args.no_publish,
+        locale=args.locale,
+        is_nsfw=args.is_nsfw,
     )
 
 
@@ -306,6 +319,7 @@ def _step_uwufufu(
             "title": game.title,
             "description": game.description,
             "category_id": game.category_id,
+            "is_nsfw": game.is_nsfw,
         },
         start_time=game.start_time,
         end_time=game.end_time,
@@ -321,6 +335,8 @@ def _step_uwufufu(
             title=game.title,
             description=game.description,
             category_id=game.category_id,
+            is_nsfw=game.is_nsfw,
+            locale=game.locale,
         )
         logger.info("Game published — id=%d slug=%s", result.game_id, result.slug)
     elif not game.publish:

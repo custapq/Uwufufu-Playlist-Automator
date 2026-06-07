@@ -230,6 +230,7 @@ class UwufufuAPIClient:
                 title=create["title"],
                 description=create["description"],
                 category_id=create["category_id"],
+                is_nsfw=create.get("is_nsfw", False),
             )
             game_id = info.id
             slug = info.slug
