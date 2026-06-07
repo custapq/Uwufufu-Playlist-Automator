@@ -7,11 +7,10 @@ from src.models import ApiCredentials, Track, YoutubeLink
 from src.youtube_api import YouTubeAPI
 
 
-def _api(key="yt_key"):
+def _api():
     return YouTubeAPI(ApiCredentials(
         spotify_client_id="id",
         spotify_client_secret="secret",
-        youtube_api_key=key,
     ))
 
 
@@ -46,7 +45,7 @@ class TestSearch:
     @patch("src.youtube_api.yt_dlp.YoutubeDL")
     def test_builds_correct_query(self, mock_ydl_cls):
         _mock_ydl(mock_ydl_cls, {"entries": [_entry()]})
-        _api("the_key").search(Track(name="Song", artist="Artist"))
+        _api().search(Track(name="Song", artist="Artist"))
 
         ydl = mock_ydl_cls.return_value.__enter__.return_value
         ydl.extract_info.assert_called_once_with("ytsearch1:Song Artist", download=False)
@@ -124,7 +123,7 @@ class TestGetPlaylistTracksHappyPath:
     def test_calls_extract_info_with_playlist_url(self, mock_ydl_cls):
         playlist_url = "https://www.youtube.com/playlist?list=PLxx"
         _mock_ydl(mock_ydl_cls, {"entries": [_entry(url="https://www.youtube.com/watch?v=v1")]})
-        _api("the_key").get_playlist_tracks(playlist_url)
+        _api().get_playlist_tracks(playlist_url)
 
         ydl = mock_ydl_cls.return_value.__enter__.return_value
         ydl.extract_info.assert_called_once_with(playlist_url, download=False)
