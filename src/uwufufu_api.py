@@ -126,7 +126,10 @@ class UwufufuAPIClient:
     def publish_game(
         self,
         game_id: int,
+        title: str,
+        description: str,
         category_id: int,
+        is_nsfw: bool = False,
         locale: str = "en",
     ) -> None:
         """PUT /games/:id — set visibility to IS_PUBLIC.
@@ -140,8 +143,11 @@ class UwufufuAPIClient:
                 f"/games/{game_id}",
                 json={
                     "id": game_id,
+                    "title": title,
+                    "description": description,
                     "visibility": "IS_PUBLIC",
                     "categoryId": category_id,
+                    "isNsfw": is_nsfw,
                     "locale": locale,
                 },
             )
@@ -172,7 +178,7 @@ class UwufufuAPIClient:
                 "/selections/video",
                 json={
                     "worldcupId": worldcup_id,
-                    "url": url,
+                    "resourceUrl": url,
                     "startTime": start_time,
                     "endTime": end_time,
                 },

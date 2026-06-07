@@ -316,7 +316,12 @@ def _step_uwufufu(
                 result.added, len(pending), result.skipped, result.failed)
 
     if game.publish and result.game_id:
-        client.publish_game(result.game_id, category_id=game.category_id)
+        client.publish_game(
+            result.game_id,
+            title=game.title,
+            description=game.description,
+            category_id=game.category_id,
+        )
         logger.info("Game published — id=%d slug=%s", result.game_id, result.slug)
     elif not game.publish:
         logger.info("Game saved as draft — id=%d", result.game_id)
