@@ -65,92 +65,92 @@ Due to [Spotify API changes in February 2026](https://developer.spotify.com/docu
 
 ## Usage
 
-## 🎮 การสร้าง Quiz Game (Usage & Game Options)
+## 🎮 Creating a Quiz Game (Usage & Game Options)
 
-คุณสามารถสร้างเกมทายใจ (Quiz Game) แบบอัตโนมัติบน UwuFufu ได้ง่ายๆ โดยสามารถตั้งค่าตัวเลือกต่างๆ ของเกมได้ตามต้องการผ่านทาง Command Line Arguments ดังนี้
+You can easily automate the creation of a Quiz Game (Worldcup) on UwuFufu. The tool allows you to customize various game options through command-line arguments.
 
-### 1. วิธีที่แนะนำในการรัน (Recommended Way)
+### 1. Recommended Way
 
-วิธีที่สะดวกที่สุดคือการใช้ไฟล์ `.env` สำหรับเก็บรหัสผ่าน และใช้คำสั่งแบบบรรทัดเดียว (One-liner) เพื่อระบุรายละเอียดของเกมทั้งหมด:
+The most convenient way is to store your credentials in a `.env` file and use a one-liner command to specify all game details:
 
 ```bash
 python -m src.main --use-env \
   --playlist-url "https://www.youtube.com/playlist?list=..." \
   --title "Guess The Anime Opening" \
-  --description "สุดยอดควิซทายเพลงอนิเมะฮิต" \
+  --description "The ultimate anime song quiz" \
   --category-id 16 \
-  --locale "th"
+  --locale "en"
 ```
 
-### 2. ตัวเลือกที่สามารถปรับแต่งได้ (Adjustable Options)
+### 2. Adjustable Options
 
-คุณสามารถปรับแต่งหน้าตาและสถานะของเกมได้ผ่าน Parameter เหล่านี้:
+You can customize the appearance and visibility of your game using the following parameters:
 
-*   **`--title` (ชื่อเกม)**
-    *   **ตัวอย่าง:** `--title "My Awesome Quiz"`
-    *   **คำอธิบาย:** ชื่อของ Worldcup หรือ Quiz ที่จะไปปรากฏบนหน้าเว็บ
-*   **`--description` (รายละเอียดเกม)**
-    *   **ตัวอย่าง:** `--description "มาทายกันว่าเพลงนี้คือเพลงอะไร"`
-    *   **คำอธิบาย:** คำอธิบายรายละเอียดกติกาหรือข้อมูลเกี่ยวกับตัวเกม
-*   **`--locale` (ภาษา)**
-    *   **ตัวอย่าง:** `--locale "th"`, `--locale "en"`, `--locale "ko"`
-    *   **คำอธิบาย:** กำหนดภาษาหลักของตัวเกม (ค่าเริ่มต้นคือ `en`)
-*   **`--category-id` (หมวดหมู่ของเกม)**
-    *   **ตัวอย่าง:** `--category-id 16`
-    *   **คำอธิบาย:** รหัสหมวดหมู่ของ UwuFufu (เช่น 16 = Music) สามารถหาเลข Category อื่นๆ ได้จาก API GET `/v1/categories` ของ UwuFufu (ค่าเริ่มต้นคือ 16)
-*   **`--is-nsfw` (เนื้อหาผู้ใหญ่)**
-    *   **ตัวอย่าง:** `--is-nsfw`
-    *   **คำอธิบาย:** ใส่ Flag นี้เพื่อระบุว่าเกมของคุณมีเนื้อหาล่อแหลม หรือเหมาะสำหรับผู้ใหญ่เท่านั้น
-*   **Visibility (สถานะการมองเห็น)**
-    *   **ตัวอย่าง:** `--no-publish`
-    *   **คำอธิบาย:** โดยปกติระบบจะตั้งสถานะเกมเป็น **Public (สาธารณะ)** โดยอัตโนมัติเมื่อเพิ่มวิดีโอเสร็จสิ้น แต่หากคุณต้องการให้เกมถูกบันทึกเป็นแค่ **Draft (ฉบับร่าง/ซ่อนไว้)** ให้ใส่คำสั่ง `--no-publish` เข้าไปด้วย
-*   **Clip Times (การตั้งเวลาเล่นวิดีโอ)**
-    *   **ตัวอย่าง:** `--start-time 30 --end-time 60`
-    *   **คำอธิบาย:** กำหนดให้วิดีโอทุกตัวในเกมเริ่มเล่นที่วินาทีใด (`start-time`) และหยุดที่วินาทีใด (`end-time`) หากไม่ได้ใส่ระบบจะเล่นวิดีโอแบบเต็มเพลงตั้งแต่ต้น
+*   **`--title`**
+    *   **Example:** `--title "My Awesome Quiz"`
+    *   **Description:** The title of the Worldcup or Quiz that will appear on the website.
+*   **`--description`**
+    *   **Example:** `--description "Guess the song playing in this video"`
+    *   **Description:** The description, rules, or any additional details about the game.
+*   **`--locale`**
+    *   **Example:** `--locale "en"`, `--locale "th"`, `--locale "ko"`
+    *   **Description:** The primary language locale for the game (default is `en`).
+*   **`--category-id`**
+    *   **Example:** `--category-id 16`
+    *   **Description:** The UwuFufu category ID (e.g., 16 = Music). You can find other category IDs via the UwuFufu API `GET /v1/categories` (default is 16).
+*   **`--is-nsfw`**
+    *   **Example:** `--is-nsfw`
+    *   **Description:** Include this flag to mark your game as containing NSFW (Not Safe For Work) or mature content.
+*   **Visibility**
+    *   **Example:** `--no-publish`
+    *   **Description:** By default, the system will set the game's visibility to **Public** automatically once all videos are added. If you want the game to be saved as a **Draft** (hidden), include the `--no-publish` flag.
+*   **Clip Times**
+    *   **Example:** `--start-time 30 --end-time 60`
+    *   **Description:** Apply a global clip time to all videos in the game. It will start playing at `start-time` (seconds) and stop at `end-time` (seconds). If omitted, the full video will be played.
 
 ---
 
-### โหมดการใช้งานอื่นๆ (Other Modes)
+### Other Modes
 
-**โหมดตอบคำถาม (Interactive Mode)**
-หากคุณไม่ได้ใส่ Parameter ข้างต้น โปรแกรมจะโต้ตอบและถามคุณทีละขั้นตอน:
+**Interactive Mode**
+If you do not provide the above parameters, the program will prompt you interactively step-by-step:
 ```bash
 python -m src.main
 ```
 
-**ดึงข้อมูลอย่างเดียว ไม่สร้างเกมบน UwuFufu (Spotify / YouTube -> JSON)**
-หากต้องการสกัดเฉพาะลิงก์ YouTube ออกมาใส่ไฟล์ `.json` โดยไม่ต้องอัปโหลดขึ้นเว็บ:
+**Extract Links Only (Spotify / YouTube -> JSON)**
+If you only want to extract YouTube links to a `.json` file without uploading to UwuFufu:
 ```bash
 python -m src.main --spotify-only --playlist-url "https://..."
 ```
-> **หมายเหตุ:** สำหรับ Spotify ในการใช้งานครั้งแรกให้ใส่ `--spotify-login` เพิ่มเข้าไป เพื่อทำการล็อกอินผ่าน Browser
+> **Note:** For Spotify, on the first run, add the `--spotify-login` flag to authenticate via your browser.
 
-**ทำต่อจากที่ค้างไว้ (Resume)**
-หากโปรแกรมหยุดทำงานกลางคัน คุณสามารถนำไฟล์ `.json` จากโฟลเดอร์ `output/` มารันต่อได้เลยโดยไม่ต้องไปดึงลิงก์ใหม่จาก Playlist:
+**Resume**
+If the program stops unexpectedly, you can resume using the generated `.json` file in the `output/` folder without refetching the playlist:
 ```bash
 python -m src.main --resume output/spotify_to_youtube.json --use-env --title "My Quiz" --description "..."
 ```
 
-### สรุปคำสั่ง (All Flags)
+### All Flags Summary
 
 ```text
---playlist-url URL    ลิงก์ของ Spotify หรือ YouTube Playlist
---email EMAIL         อีเมลของ UwuFufu
---title TEXT          ชื่อเกม
---description TEXT    คำอธิบายเกม
---locale LANG         ภาษาของเกม เช่น en, th (ค่าเริ่มต้น: en)
---category-id N       รหัสหมวดหมู่ (ค่าเริ่มต้น: 16)
---is-nsfw             ติ๊กตั้งค่าว่าเป็นเนื้อหา NSFW
---no-publish          บันทึกเกมเป็น Draft แทนการ Publish สู่สาธารณะ
---start-time SECS     เวลาเริ่มต้นวิดีโอ (วินาที)
---end-time SECS       เวลาสิ้นสุดวิดีโอ (วินาที)
---use-env             โหลดอีเมล/รหัสผ่าน และ Client ID จากไฟล์ .env
---spotify-only        ข้ามขั้นตอน UwuFufu ไปเลย (สกัดลิงก์อย่างเดียว)
---spotify-login       บังคับล็อกอินเข้า Spotify ผ่านหน้าเว็บใหม่
---resume FILE         โหลดลิงก์ YouTube จากไฟล์ JSON เพื่อทำต่อ
---config FILE         ระบุที่อยู่ของไฟล์ config.yaml
---output FILE         ระบุ path และชื่อไฟล์ผลลัพธ์ที่จะเซฟ (ไม่ต้องใส่นามสกุล)
--v / --verbose        เปิดระบบ Debug Logging
+--playlist-url URL    Spotify or YouTube playlist URL
+--email EMAIL         UwuFufu account email
+--title TEXT          Game title
+--description TEXT    Game description
+--locale LANG         Language locale, e.g. en, th (default: en)
+--category-id N       Category ID (default: 16)
+--is-nsfw             Mark as containing NSFW content
+--no-publish          Save game as a Draft instead of publishing it
+--start-time SECS     Clip start time in seconds
+--end-time SECS       Clip end time in seconds
+--use-env             Load credentials and Client ID from .env
+--spotify-only        Skip the UwuFufu step (extract links only)
+--spotify-login       Force a fresh Spotify browser login
+--resume FILE         Load YouTube links from JSON to resume UwuFufu import
+--config FILE         Path to a custom config.yaml
+--output FILE         Base path and filename for the output (no extension)
+-v / --verbose        Enable debug logging
 ```
 
 ## Project Structure
