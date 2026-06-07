@@ -1,4 +1,4 @@
-# Playlist to UwuFufu Automation Tool (v4.0.0)
+# Playlist to UwuFufu Automation Tool (v4.0.1)
 
 A Python automation tool that takes a **Spotify or YouTube playlist** link, resolves a YouTube video URL for every track, and automatically creates a UwuFufu quiz game with those videos via the **UwuFufu REST API** — no browser or ChromeDriver required.
 
@@ -23,8 +23,8 @@ A Python automation tool that takes a **Spotify or YouTube playlist** link, reso
 ## Installation
 
 ```bash
-git clone https://github.com/custapq/Uwufufu-Automator.git
-cd Uwufufu-Automator
+git clone https://github.com/custapq/Uwufufu-Playlist-Automator.git
+cd Uwufufu-Playlist-Automator
 pip install -r requirements.txt
 ```
 

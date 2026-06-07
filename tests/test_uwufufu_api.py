@@ -105,17 +105,20 @@ class TestPublishGame:
         client, session = _client()
         session.request.return_value = _ok({"id": 7}, status=200)
 
-        client.publish_game(7, category_id=16, locale="en")
+        client.publish_game(7, title="T", description="D", category_id=16, locale="en")
 
         _, kwargs = session.request.call_args
         assert kwargs["json"]["visibility"] == "IS_PUBLIC"
+        assert kwargs["json"]["title"] == "T"
+        assert kwargs["json"]["description"] == "D"
+        assert kwargs["json"]["isNsfw"] is False
 
     def test_raises_game_creation_error_on_failure(self):
         client, session = _client()
         session.request.return_value = _err(403, "forbidden")
 
         with pytest.raises(GameCreationError):
-            client.publish_game(7, category_id=16)
+            client.publish_game(7, title="T", description="D", category_id=16)
 
 
 # ─────────────────────────────────────────────
@@ -140,7 +143,7 @@ class TestAddVideo:
 
         _, kwargs = session.request.call_args
         assert kwargs["json"]["worldcupId"] == 42
-        assert kwargs["json"]["url"] == "https://youtube.com/watch?v=xyz"
+        assert kwargs["json"]["resourceUrl"] == "https://youtube.com/watch?v=xyz"
         assert kwargs["json"]["startTime"] == 10
         assert kwargs["json"]["endTime"] == 60
 
